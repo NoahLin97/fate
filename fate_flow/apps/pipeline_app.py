@@ -29,7 +29,7 @@ def internal_server_error(e):
 
 @manager.route('/dag/dependency', methods=['post'])
 def pipeline_dag_dependency():
-    dependency = pipeline_manager.pipeline_dag_dependency(request.json)
+    dependency = pipeline_manager.pipeline_dag_dependency(request.json)#调用fate_flow.manager.pipeline_manager模块的pipeline_dag_dependency方法
     if dependency:
         return get_json_result(retcode=0, retmsg='success', data=dependency)
     else:
