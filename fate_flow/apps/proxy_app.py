@@ -34,10 +34,12 @@ def internal_server_error(e):
 @manager.route('/<role>', methods=['post'])
 def start_proxy(role):
     request_config = request.json or request.form.to_dict()
-    _job_id = job_utils.generate_job_id()
-    if role in ['marketplace']:
+    _job_id = job_utils.generate_job_id()#调用fate_flow.utils.job_utils模块的generate_job_id生成job_id
+    if role in ['marketplace']:#若role在字典['marketplace']中
+        # 则将role、_job_id、request_config作为参数，调用fate_flow.utils.api_utils模块的proxy_api方法
         response = proxy_api(role, _job_id, request_config)
     else:
+        #调用fate_flow.utils.api_utils模块的federated_api方法
         response = federated_api(job_id=_job_id,
                                  method='POST',
                                  endpoint='/forward/{}/do'.format(role),
