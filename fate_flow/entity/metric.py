@@ -28,6 +28,7 @@ class Metric(object):
 
 
 class MetricMeta(object):
+    # 初始化函数\__init__使用键值对以及时间戳来初始化Metric类
     def __init__(self, name: str, metric_type: MetricType, extra_metas: dict = None):
         self.name = name
         self.metric_type = metric_type
@@ -37,9 +38,11 @@ class MetricMeta(object):
         self.metas['name'] = name
         self.metas['metric_type'] = metric_type
 
+    # 更新metas类变量
     def update_metas(self, metas: dict):
         self.metas.update(metas)
 
+    # 返回metas类变量
     def to_dict(self):
         return self.metas
 

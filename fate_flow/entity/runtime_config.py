@@ -33,19 +33,23 @@ class RuntimeConfig(object):
     ENV = dict()
 
     @classmethod
+    # 初始化config
     def init_config(cls, **kwargs):
         for k, v in kwargs.items():
             if hasattr(RuntimeConfig, k):
                 setattr(RuntimeConfig, k, v)
 
     @classmethod
+    # 初始化环境
     def init_env(cls):
         RuntimeConfig.ENV.update(get_versions())
 
     @classmethod
+    # 返回类变量ENV
     def get_env(cls, key):
         return RuntimeConfig.ENV.get(key, None)
 
     @classmethod
+    # 设置进程的角色
     def set_process_role(cls, process_role: PROCESS_ROLE):
         RuntimeConfig.PROCESS_ROLE = process_role

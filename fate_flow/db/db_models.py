@@ -33,7 +33,8 @@ from fate_flow.entity.runtime_config import RuntimeConfig
 
 LOGGER = log.getLogger()
 
-
+# 单例模式，保证一个类仅有一个实例，并提供一个访问它的全局访问点
+# 由于IO处理，数据库操作等都要占用重要的系统资源，所以我们必须限制这些实例的创建或始终使用一个公用的实例
 def singleton(cls, *args, **kw):
     instances = {}
 
@@ -47,7 +48,9 @@ def singleton(cls, *args, **kw):
 
 
 @singleton
+# 定义数据库基类
 class BaseDataBase(object):
+    # 定义初始化函数
     def __init__(self):
         database_config = DATABASE.copy()
         db_name = database_config.pop("name")
@@ -72,7 +75,7 @@ else:
     # Initialize the database only when the server is started.
     DB = None
 
-
+# 关闭数据库连接
 def close_connection():
     try:
         if DB:
@@ -80,13 +83,14 @@ def close_connection():
     except Exception as e:
         LOGGER.exception(e)
 
-
+# 定义数据基础模型
 class DataBaseModel(BaseModel):
     class Meta:
         database = DB
 
 
 @DB.connection_context()
+# 初始化数据库中的表
 def init_database_tables():
     members = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     table_objs = []
@@ -95,7 +99,7 @@ def init_database_tables():
             table_objs.append(obj)
     DB.create_tables(table_objs)
 
-
+# 为数据库模型添加属性及其值
 def fill_db_model_object(model_object, human_model_dict):
     for k, v in human_model_dict.items():
         attr_name = 'f_%s' % k
@@ -103,7 +107,7 @@ def fill_db_model_object(model_object, human_model_dict):
             setattr(model_object, attr_name, v)
     return model_object
 
-
+# 定义与数据库相关的Job类
 class Job(DataBaseModel):
     # multi-party common configuration
     f_user_id = CharField(max_length=25, index=True, null=True)
@@ -153,7 +157,7 @@ class Job(DataBaseModel):
         db_table = "t_job"
         primary_key = CompositeKey('f_job_id', 'f_role', 'f_party_id')
 
-
+# 定义与数据库相关的Task类
 class Task(DataBaseModel):
     # multi-party common configuration
     f_job_id = CharField(max_length=25, index=True)
@@ -184,7 +188,7 @@ class Task(DataBaseModel):
         db_table = "t_task"
         primary_key = CompositeKey('f_job_id', 'f_task_id', 'f_task_version', 'f_role', 'f_party_id')
 
-
+# 追踪指标
 class TrackingMetric(DataBaseModel):
     _mapper = {}
 
@@ -220,7 +224,7 @@ class TrackingMetric(DataBaseModel):
     f_value = LongTextField()
     f_type = IntegerField(index=True)  # 0 is data, 1 is meta
 
-
+# 追踪数据输出信息
 class TrackingOutputDataInfo(DataBaseModel):
     _mapper = {}
 
@@ -257,7 +261,7 @@ class TrackingOutputDataInfo(DataBaseModel):
     f_table_namespace = CharField(max_length=500, null=True)
     f_description = TextField(null=True, default='')
 
-
+# 定义机器学习模型相关信息
 class MachineLearningModelInfo(DataBaseModel):
     f_role = CharField(max_length=50, index=True)
     f_party_id = CharField(max_length=10, index=True)
@@ -286,7 +290,7 @@ class MachineLearningModelInfo(DataBaseModel):
         db_table = "t_machine_learning_model_info"
         primary_key = CompositeKey('f_role', 'f_party_id', 'f_model_id', 'f_model_version')
 
-
+# 定义模型标签
 class ModelTag(DataBaseModel):
     f_id = BigAutoField(primary_key=True)
     f_m_id = CharField(max_length=25, null=False)
@@ -295,7 +299,7 @@ class ModelTag(DataBaseModel):
     class Meta:
         db_table = "t_model_tag"
 
-
+# 定义标签
 class Tag(DataBaseModel):
     f_id = BigAutoField(primary_key=True)
     f_name = CharField(max_length=100, index=True, unique=True)
@@ -304,7 +308,7 @@ class Tag(DataBaseModel):
     class Meta:
         db_table = "t_tags"
 
-
+# 定义组件摘要
 class ComponentSummary(DataBaseModel):
     _mapper = {}
 
@@ -335,7 +339,7 @@ class ComponentSummary(DataBaseModel):
     f_task_version = CharField(max_length=50, null=True, index=True)
     f_summary = LongTextField()
 
-
+# 定义模型操作日志
 class ModelOperationLog(DataBaseModel):
     f_operation_type = CharField(max_length=20, null=False, index=True)
     f_operation_status = CharField(max_length=20, null=True, index=True)
@@ -348,7 +352,7 @@ class ModelOperationLog(DataBaseModel):
     class Meta:
         db_table = "t_model_operation_log"
 
-
+# 定义引擎注册相关信息
 class EngineRegistry(DataBaseModel):
     f_engine_type = CharField(max_length=10, index=True)
     f_engine_name = CharField(max_length=50, index=True)

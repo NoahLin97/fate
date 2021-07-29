@@ -18,6 +18,7 @@ from enum import IntEnum
 
 
 class RunParameters(object):
+    # 初始化RunParameters类
     def __init__(self, **kwargs):
         self.job_type = "train"
         self.work_mode = WorkMode.STANDALONE
@@ -49,6 +50,7 @@ class RunParameters(object):
             if hasattr(self, k):
                 setattr(self, k, v)
 
+    # 返回非空的RunParameters类变量
     def to_dict(self):
         d = {}
         for k, v in self.__dict__.items():
@@ -57,7 +59,7 @@ class RunParameters(object):
             d[k] = v
         return d
 
-
+# 定义返回值编码
 class RetCode(IntEnum):
     SUCCESS = 0
     EXCEPTION_ERROR = 100
@@ -68,7 +70,7 @@ class RetCode(IntEnum):
     CONNECTION_ERROR = 105
     SERVER_ERROR = 500
 
-
+# 定义调度状态编码
 class SchedulingStatusCode(object):
     SUCCESS = 0
     NO_RESOURCE = 1
@@ -77,24 +79,26 @@ class SchedulingStatusCode(object):
     HAVE_NEXT = 3
     FAILED = 4
 
-
+# 定义联邦调度状态编码
 class FederatedSchedulingStatusCode(object):
     SUCCESS = 0
     PARTIAL = 1
     FAILED = 2
     ERROR = 3
 
-
+# 定义状态基类
 class BaseStatus(object):
     @classmethod
+    # 返回状态列表
     def status_list(cls):
         return [cls.__dict__[k] for k in cls.__dict__.keys() if not callable(getattr(cls, k)) and not k.startswith("__")]
 
     @classmethod
+    # 判断状态是否存在于状态列表中
     def contains(cls, status):
         return status in cls.status_list()
 
-
+# 继承BaseStatus类，定义状态集
 class StatusSet(BaseStatus):
     WAITING = 'waiting'
     READY = 'ready'
@@ -105,14 +109,16 @@ class StatusSet(BaseStatus):
     SUCCESS = "success"
 
     @classmethod
+    # 返回状态值
     def get_level(cls, status):
         return dict(zip(cls.status_list(), range(len(cls.status_list())))).get(status, None)
 
-
+# 定义状态转换规则基类
 class BaseStateTransitionRule(object):
     RULES = {}
 
     @classmethod
+    # 判断是否可以从src_status转换到dest_status
     def if_pass(cls, src_status, dest_status):
         if src_status not in cls.RULES:
             return False
@@ -121,7 +127,7 @@ class BaseStateTransitionRule(object):
         else:
             return True
 
-
+# 继承状态基类，定义job状态集
 class JobStatus(BaseStatus):
     WAITING = StatusSet.WAITING
     READY = StatusSet.READY
@@ -131,6 +137,7 @@ class JobStatus(BaseStatus):
     FAILED = StatusSet.FAILED
     SUCCESS = StatusSet.SUCCESS
 
+    # 继承状态转换规则基类
     class StateTransitionRule(BaseStateTransitionRule):
         RULES = {
             StatusSet.WAITING: [StatusSet.READY, StatusSet.RUNNING, StatusSet.CANCELED, StatusSet.TIMEOUT, StatusSet.FAILED, StatusSet.SUCCESS],
@@ -142,7 +149,7 @@ class JobStatus(BaseStatus):
             StatusSet.SUCCESS: [StatusSet.WAITING],
         }
 
-
+# 继承状态基类，定义task状态集
 class TaskStatus(BaseStatus):
     WAITING = StatusSet.WAITING
     RUNNING = StatusSet.RUNNING
@@ -151,6 +158,7 @@ class TaskStatus(BaseStatus):
     FAILED = StatusSet.FAILED
     SUCCESS = StatusSet.SUCCESS
 
+    # 继承状态转换规则基类
     class StateTransitionRule(BaseStateTransitionRule):
         RULES = {
             StatusSet.WAITING: [StatusSet.RUNNING, StatusSet.SUCCESS],
@@ -161,30 +169,30 @@ class TaskStatus(BaseStatus):
             StatusSet.SUCCESS: [],
         }
 
-
+# 继承BaseStatus类，定义运行状态
 class OngoingStatus(BaseStatus):
     WAITING = StatusSet.WAITING
     RUNNING = StatusSet.RUNNING
 
-
+# 继承BaseStatus类，定义中断状态
 class InterruptStatus(BaseStatus):
     CANCELED = StatusSet.CANCELED
     TIMEOUT = StatusSet.TIMEOUT
     FAILED = StatusSet.FAILED
 
-
+# 继承BaseStatus类，定义结束状态
 class EndStatus(BaseStatus):
     CANCELED = StatusSet.CANCELED
     TIMEOUT = StatusSet.TIMEOUT
     FAILED = StatusSet.FAILED
     SUCCESS = StatusSet.SUCCESS
 
-
+# 定义模型存储
 class ModelStorage(object):
     REDIS = "redis"
     MYSQL = "mysql"
 
-
+# 定义模型操作
 class ModelOperation(object):
     STORE = "store"
     RESTORE = "restore"
@@ -193,12 +201,12 @@ class ModelOperation(object):
     LOAD = "load"
     BIND = "bind"
 
-
+# 定义进程角色
 class ProcessRole(object):
     DRIVER = "driver"
     EXECUTOR = "executor"
 
-
+# 定义tag操作
 class TagOperation(object):
     CREATE = "create"
     RETRIEVE = "retrieve"
@@ -206,12 +214,12 @@ class TagOperation(object):
     DESTROY = "destroy"
     LIST = "list"
 
-
+# 定义资源操作
 class ResourceOperation(object):
     APPLY = "apply"
     RETURN = "return"
 
-
+# 定义kill进程状态编码
 class KillProcessStatusCode(object):
     KILLED = 0
     NOT_FOUND = 1

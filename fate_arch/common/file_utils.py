@@ -84,12 +84,14 @@ def load_json_conf_real_time(conf_path):
             "loading json file config from '{}' failed!".format(json_conf_path)
         )
 
-
+# 根据config路径获取对应的yaml文件内容
 def load_yaml_conf(conf_path):
+    # 判断是否是绝对路径，是相对路径的话加上项目的基础路径
     if not os.path.isabs(conf_path):
         conf_path = os.path.join(get_project_base_directory(), conf_path)
     try:
         with open(conf_path) as f:
+            # yaml.safe_load读取yaml文件
             return yaml.safe_load(f)
     except Exception as e:
         raise EnvironmentError(

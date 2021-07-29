@@ -21,7 +21,9 @@ from fate_flow.db.db_models import DB, TrackingMetric
 
 
 @DB.connection_context()
+# 定义了查询数据视图
 def query_data_view(**kwargs):
+    # 通过过滤条件filters返回符合的数据
     filters = []
     for f_n, f_v in kwargs.items():
         attr_name = 'f_%s' % f_n
@@ -33,7 +35,7 @@ def query_data_view(**kwargs):
         data_views = []
     return [data_view for data_view in data_views]
 
-
+# 通过table_infos来删除表
 def delete_tables_by_table_infos(output_data_table_infos):
     data = []
     status = False
@@ -52,7 +54,7 @@ def delete_tables_by_table_infos(output_data_table_infos):
                     pass
     return status, data
 
-
+# 判断metric_info中model的值，再选择执行drop_metric_data_mode或者delete_metric_data_from_db
 def delete_metric_data(metric_info):
     if metric_info.get('model'):
         sql = drop_metric_data_mode(metric_info.get('model'))
@@ -62,6 +64,7 @@ def delete_metric_data(metric_info):
 
 
 @DB.connection_context()
+# 删除对应的模型表
 def drop_metric_data_mode(model):
     try:
         drop_sql = 'drop table t_tracking_metric_{}'.format(model)
@@ -74,6 +77,7 @@ def drop_metric_data_mode(model):
 
 
 @DB.connection_context()
+# 从数据库中删除符合条件的数据，找到对应的job_id以及其他存在的属性
 def delete_metric_data_from_db(metric_info):
     try:
         job_id = metric_info['job_id']

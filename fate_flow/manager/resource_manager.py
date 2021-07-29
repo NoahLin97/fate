@@ -28,15 +28,20 @@ from fate_flow.settings import stat_logger, STANDALONE_BACKEND_VIRTUAL_CORES_PER
     MAX_CORES_PERCENT_PER_JOB, DEFAULT_TASK_CORES, IGNORE_RESOURCE_ROLES, SUPPORT_IGNORE_RESOURCE_ENGINES, TOTAL_CORES_OVERWEIGHT_PERCENT, TOTAL_MEMORY_OVERWEIGHT_PERCENT
 from fate_flow.utils import job_utils
 
-
+# 定义资源管理类
 class ResourceManager(object):
     @classmethod
+    # 初始化资源管理类
     def initialize(cls):
+        # eggroll和spark
+        # 从fate_flow.settings调用SUPPORT_BACKENDS_ENTRANCE模块，获得所用到支持的引擎
         for backend_name, backend_engines in SUPPORT_BACKENDS_ENTRANCE.items():
             for engine_type, engine_keys_list in backend_engines.items():
                 for engine_keys in engine_keys_list:
+                    # 从fate_arch.common.conf_utils中调用get_base_config方法，获得基础的config配置
                     engine_config = get_base_config(backend_name, {}).get(engine_keys[1], {})
                     if engine_config:
+                        # 如果引擎的config存在就注册该引擎
                         cls.register_engine(engine_type=engine_type, engine_name=engine_keys[0], engine_entrance=engine_keys[1], engine_config=engine_config)
 
         # initialize standalone engine
@@ -52,10 +57,14 @@ class ResourceManager(object):
 
     @classmethod
     @DB.connection_context()
+    # 引擎的注册
     def register_engine(cls, engine_type, engine_name, engine_entrance, engine_config):
         nodes = engine_config.get("nodes", 1)
+        # 从fate_flow.settings调用TOTAL_CORES_OVERWEIGHT_PERCENT，全部核所占的百分比，默认为1，表示不超载
         cores = engine_config.get("cores_per_node", 0) * nodes * TOTAL_CORES_OVERWEIGHT_PERCENT
+        # 从fate_flow.settings调用TOTAL_MEMORY_OVERWEIGHT_PERCENT，全部内存所占的百分比，默认为1，表示不超载
         memory = engine_config.get("memory_per_node", 0) * nodes * TOTAL_MEMORY_OVERWEIGHT_PERCENT
+        # 从fate_flow.db.db_models中调用EngineRegistry模块，作为数据库搜索的判断条件
         filters = [EngineRegistry.f_engine_type == engine_type, EngineRegistry.f_engine_name == engine_name]
         resources = EngineRegistry.select().where(*filters)
         if resources:
@@ -69,14 +78,17 @@ class ResourceManager(object):
             update_fields[EngineRegistry.f_remaining_memory] = EngineRegistry.f_remaining_memory + (
                     memory - resource.f_memory)
             update_fields[EngineRegistry.f_nodes] = nodes
+            # 执行数据库更新语句
             operate = EngineRegistry.update(update_fields).where(*filters)
             update_status = operate.execute() > 0
             if update_status:
+                # 从fate_flow.settings中调用stat_logger模块，记录sql语句日志
                 stat_logger.info(f"update {engine_type} engine {engine_name} {engine_entrance} registration information")
             else:
                 stat_logger.info(f"update {engine_type} engine {engine_name} {engine_entrance} registration information takes no effect")
         else:
             resource = EngineRegistry()
+            # 调用fate_arch.common中的base_utils，current_timestamp方法返回当前时间戳
             resource.f_create_time = base_utils.current_timestamp()
             resource.f_engine_type = engine_type
             resource.f_engine_name = engine_name
@@ -95,8 +107,11 @@ class ResourceManager(object):
             stat_logger.info(f"create {engine_type} engine {engine_name} {engine_entrance} registration information")
 
     @classmethod
+    # 检查资源申请
     def check_resource_apply(cls, job_parameters: RunParameters, role, party_id, engines_info):
+        # 计算job所需资源
         computing_engine, cores, memory = cls.calculate_job_resource(job_parameters=job_parameters, role=role, party_id=party_id)
+        # 从fate_flow.settings调用MAX_CORES_PERCENT_PER_JOB，每个job可以使用的最大核百分比
         max_cores_per_job = math.floor(engines_info[EngineType.COMPUTING].f_cores * MAX_CORES_PERCENT_PER_JOB)
         if cores > max_cores_per_job:
             return False, cores, max_cores_per_job
@@ -104,22 +119,27 @@ class ResourceManager(object):
             return True, cores, max_cores_per_job
 
     @classmethod
+    # 申请job资源
     def apply_for_job_resource(cls, job_id, role, party_id):
         return cls.resource_for_job(job_id=job_id, role=role, party_id=party_id, operation_type=ResourceOperation.APPLY)
 
     @classmethod
+    # 返回job资源
     def return_job_resource(cls, job_id, role, party_id):
         return cls.resource_for_job(job_id=job_id, role=role, party_id=party_id,
                                     operation_type=ResourceOperation.RETURN)
 
     @classmethod
     @DB.connection_context()
+    # 根据ResourceOperation类型决定是申请job资源还是返回job资源
     def resource_for_job(cls, job_id, role, party_id, operation_type):
         operate_status = False
+        # 计算job所需资源
         engine_name, cores, memory = cls.calculate_job_resource(job_id=job_id, role=role, party_id=party_id)
         try:
             with DB.atomic():
                 updates = {
+                    # 从fate_flow.db.db_models调用Job模块，进行数据库写入
                     Job.f_engine_type: EngineType.COMPUTING,
                     Job.f_engine_name: engine_name,
                     Job.f_cores: cores,
@@ -177,7 +197,9 @@ class ResourceManager(object):
             return operate_status
 
     @classmethod
+    # 修正引擎参数
     def adapt_engine_parameters(cls, role, job_parameters: RunParameters, create_initiator_baseline=False):
+        # 获取引擎注册信息
         computing_engine_info = ResourceManager.get_engine_registration_info(engine_type=EngineType.COMPUTING,
                                                                              engine_name=job_parameters.computing_engine)
         if create_initiator_baseline:
@@ -221,8 +243,10 @@ class ResourceManager(object):
                 job_parameters.spark_run["executor-cores"] = adaptation_parameters["task_cores_per_node"]
 
     @classmethod
+    # 计算job所需资源
     def calculate_job_resource(cls, job_parameters: RunParameters = None, job_id=None, role=None, party_id=None):
         if not job_parameters:
+            # 从fate_flow.utils导入job_utils模块，get_job_parameters方法得到job的参数
             job_parameters = job_utils.get_job_parameters(job_id=job_id,
                                                           role=role,
                                                           party_id=party_id)
@@ -238,8 +262,10 @@ class ResourceManager(object):
         return job_parameters.computing_engine, cores, memory
 
     @classmethod
+    # 计算task所需资源
     def calculate_task_resource(cls, task_parameters: RunParameters = None, task_info: dict = None):
         if not task_parameters:
+            # 从fate_flow.utils导入job_utils模块，get_job_parameters方法得到job的参数
             job_parameters = job_utils.get_job_parameters(job_id=task_info["job_id"],
                                                           role=task_info["role"],
                                                           party_id=task_info["party_id"])
@@ -255,15 +281,19 @@ class ResourceManager(object):
         return cores_per_task, memory_per_task
 
     @classmethod
+    # 申请task资源
     def apply_for_task_resource(cls, task_info):
         return ResourceManager.resource_for_task(task_info=task_info, operation_type=ResourceOperation.APPLY)
 
     @classmethod
+    # 返回task资源
     def return_task_resource(cls, task_info):
         return ResourceManager.resource_for_task(task_info=task_info, operation_type=ResourceOperation.RETURN)
 
     @classmethod
+    # 根据ResourceOperation类型决定是申请task资源还是返回task资源
     def resource_for_task(cls, task_info, operation_type):
+        # 计算task所需资源
         cores_per_task, memory_per_task = cls.calculate_task_resource(task_info=task_info)
 
         if cores_per_task or memory_per_task:
@@ -291,6 +321,7 @@ class ResourceManager(object):
         return operate_status
 
     @classmethod
+    # 执行更新资源的sql语句
     def update_resource_sql(cls, resource_model: typing.Union[EngineRegistry, Job], cores, memory, operation_type):
         if operation_type == ResourceOperation.APPLY:
             filters = [
@@ -309,6 +340,7 @@ class ResourceManager(object):
 
     @classmethod
     @DB.connection_context()
+    # 获取剩余资源
     def get_remaining_resource(cls, resource_model: typing.Union[EngineRegistry, Job], filters):
         remaining_cores, remaining_memory = None, None
         try:
@@ -323,6 +355,7 @@ class ResourceManager(object):
 
     @classmethod
     @DB.connection_context()
+    # 获取引擎注册信息
     def get_engine_registration_info(cls, engine_type, engine_name) -> EngineRegistry:
         engines = EngineRegistry.select().where(EngineRegistry.f_engine_type == engine_type,
                                                 EngineRegistry.f_engine_name == engine_name)
