@@ -38,7 +38,7 @@ def internal_server_error(e):
 
 @manager.route('/<access_module>', methods=['post'])
 def download_upload(access_module):
-    job_id = job_utils.generate_job_id()##生成job_id
+    job_id = job_utils.generate_job_id()##调用fate_flow\utils\job_utils模块的generate_job_id方法生成job_id
     ##自行上传数据文件，user_local_data==1
     if access_module == "upload" and UPLOAD_DATA_FROM_CLIENT and not (request.json and request.json.get("use_local_data") == 0):
         file = request.files['file']
@@ -66,7 +66,7 @@ def download_upload(access_module):
         required_arguments.extend(['output_path'])
     else:
         raise Exception('can not support this operating: {}'.format(access_module))
-    detect_utils.check_config(job_config, required_arguments=required_arguments)##fate_flow/utils/detect_utils.py模块检查参数
+    detect_utils.check_config(job_config, required_arguments=required_arguments)#调用fate_flow/utils/detect_utils模块的check_config方法检查参数是否合法
     data = {}
     # compatibility
     if "table_name" in job_config:
@@ -83,7 +83,7 @@ def download_upload(access_module):
             job_config["destroy"] = False
         data['table_name'] = job_config["table_name"]
         data['namespace'] = job_config["namespace"]
-        data_table_meta = storage.StorageTableMeta(name=job_config["table_name"], namespace=job_config["namespace"])##fate_arch/storage
+        data_table_meta = storage.StorageTableMeta(name=job_config["table_name"], namespace=job_config["namespace"])##调用fate_arch/storage模块存储元数据
         if data_table_meta and not job_config["destroy"]:
             return get_json_result(retcode=100,
                                    retmsg='The data table already exists.'
@@ -91,7 +91,7 @@ def download_upload(access_module):
                                           ' 0 means not to delete and continue uploading, '
                                           '1 means to upload again after deleting the table')
     job_dsl, job_runtime_conf = gen_data_access_job_config(job_config, access_module)##生成dsl和conf
-    submit_result = DAGScheduler.submit({'job_dsl': job_dsl, 'job_runtime_conf': job_runtime_conf}, job_id=job_id)##fate_flow/scheduler/dag_scheduler.py
+    submit_result = DAGScheduler.submit({'job_dsl': job_dsl, 'job_runtime_conf': job_runtime_conf}, job_id=job_id)##调用fate_flow/scheduler/dag_scheduler的submit方法提交job
     data.update(submit_result)
     return get_json_result(job_id=job_id, data=data)
 
@@ -99,17 +99,18 @@ def download_upload(access_module):
 @manager.route('/upload/history', methods=['POST'])
 def upload_history():
     request_data = request.json
+    #根据参数调用fate_flow/operation/job_saver模块的query_task方法获取使用upload组件的task列表
     if request_data.get('job_id'):
         tasks = JobSaver.query_task(component_name='upload_0', status=StatusSet.SUCCESS, job_id=request_data.get('job_id'), run_on_this_party=True)
     else:
-        tasks = JobSaver.query_task(component_name='upload_0', status=StatusSet.SUCCESS, run_on_this_party=True)##fate_flow/operation/job_saver.py
+        tasks = JobSaver.query_task(component_name='upload_0', status=StatusSet.SUCCESS, run_on_this_party=True)
     limit = request_data.get('limit')
     if not limit:
         tasks = tasks[-1::-1]#从最后一个元素往前读取所有元素
     else:
         tasks = tasks[-1:-limit - 1:-1]#从最后一个元素往前读取limit个元素
-    jobs_run_conf = job_utils.get_job_configuration(None, None, None, tasks)##fate_flow/utils/job_utils.py获取job的conf
-    data = get_upload_info(jobs_run_conf=jobs_run_conf)
+    jobs_run_conf = job_utils.get_job_configuration(None, None, None, tasks)##调用fate_flow/utils/job_utils模块的get_job_configuration方法获取task对应job的conf信息
+    data = get_upload_info(jobs_run_conf=jobs_run_conf)#从job的conf信息中得到数据上传的信息
     return get_json_result(retcode=0, retmsg='success', data=data)
 
 

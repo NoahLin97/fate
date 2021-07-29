@@ -54,20 +54,26 @@ def internal_server_error(e):
 
 @manager.route('/load', methods=['POST'])
 def load_model():
-    request_config = request.json
+    request_config = request.json#获取参数，将参数放入变量request_config
     if request_config.get('job_id', None):##请求参数中包含job_id
+        #将job_id作为参数，调用fate_flow/utils/model_utils模块的query_model_info方法获取job中的模型信息model_info
         retcode, retmsg, res_data = model_utils.query_model_info(model_version=request_config['job_id'], role='guest')#fate_flow/utils/model_utils.py通过model_version获取model信息
         if res_data:
-            ##利用model信息生成request_config
             model_info = res_data[0]
+            #从model_info中得到发起方的角色、id和runtime_conf，将得到的数据放入变量request_config
             request_config['initiator'] = {}
-            request_config['initiator']['party_id'] = str(model_info.get('f_initiator_party_id'))#从model中获取发起方id
-            request_config['initiator']['role'] = model_info.get('f_initiator_role')#从model中获取发起方角色
+            request_config['initiator']['party_id'] = str(model_info.get('f_initiator_party_id'))
+            request_config['initiator']['role'] = model_info.get('f_initiator_role')
             runtime_conf = model_info.get('f_runtime_conf', {}) if model_info.get('f_runtime_conf', {}) else model_info.get('f_train_runtime_conf', {})
-            adapter = JobRuntimeConfigAdapter(runtime_conf)#fate_flow/utils/config_adapter.py通过runtime_conf得到adapter
-            job_parameters = adapter.get_common_parameters().to_dict()##通过adapter得到common参数
+
+            #将runtime_conf作为参数，调用fate_flow/utils/config_adapter模块得到adapter对象
+            adapter = JobRuntimeConfigAdapter(runtime_conf)
+            #通过adapter对象调用fate_flow/utils/config_adapter模块的get_common_parameters方法得到job的参数放入变量request_config
+            job_parameters = adapter.get_common_parameters().to_dict()
             request_config['job_parameters'] = job_parameters if job_parameters else model_info.get('f_train_runtime_conf', {}).get('job_parameters')
-            roles = runtime_conf.get('role')#从runtime_conf获取role
+
+            #从runtime_conf中得到role信息，将得到的数据放入变量request_config
+            roles = runtime_conf.get('role')
             request_config['role'] = roles if roles else model_info.get('f_train_runtime_conf', {}).get('role')
             for key, value in request_config['role'].items():
                 for i, v in enumerate(value):
@@ -77,20 +83,25 @@ def load_model():
             return get_json_result(retcode=101,
                                    retmsg="model with version {} can not be found in database. "
                                           "Please check if the model version is valid.".format(request_config.get('job_id')))
-    _job_id = job_utils.generate_job_id()#fate_flow/utils/job_utils.py生成新的job_id
+
+
+    _job_id = job_utils.generate_job_id()#调用fate_flow/utils/job_utils模块的generate_job_id方法生成新的job_id
     initiator_party_id = request_config['initiator']['party_id']#发起方id
     initiator_role = request_config['initiator']['role']#发起方角色
-    publish_model.generate_publish_model_info(request_config)#fate_flow\pipelined_model\publish_model.py生成发布模型信息
+    #将request_config作为参数，调用fate_flow\pipelined_model\publish_model模块的generate_publish_model_info方法生成发布模型的信息
+    publish_model.generate_publish_model_info(request_config)
     load_status = True
     load_status_info = {}
     load_status_msg = 'success'
     load_status_info['detail'] = {}
-    ##处理request_config的job_parameters中的federated_mode
+
+    ##根据参数job_parameters中的work_mode处理变量request_config的job_parameters字段中的federated_mode字段
     if "federated_mode" not in request_config['job_parameters']:
         if request_config["job_parameters"]["work_mode"] == WorkMode.STANDALONE:
             request_config['job_parameters']["federated_mode"] = FederatedMode.SINGLE
         elif request_config["job_parameters"]["work_mode"] == WorkMode.CLUSTER:
             request_config['job_parameters']["federated_mode"] = FederatedMode.MULTIPLE
+
     for role_name, role_partys in request_config.get("role").items():
         if role_name == 'arbiter':
             continue
@@ -99,6 +110,7 @@ def load_model():
         for _party_id in role_partys:
             request_config['local'] = {'role': role_name, 'party_id': _party_id}
             try:
+                #将request_config作为参数，循环调用fate_flow/utils/api_utils模块的federated_api方法执行模型加载
                 response = federated_api(job_id=_job_id,
                                          method='POST',
                                          endpoint='/model/load/do',
@@ -126,13 +138,13 @@ def load_model():
 
 @manager.route('/migrate', methods=['POST'])
 def migrate_model_process():
-    request_config = request.json
-    _job_id = job_utils.generate_job_id()#fate_flow/utils/job_utils.py生成新的job_id
+    request_config = request.json#获取参数，将参数放入变量request_config
+    _job_id = job_utils.generate_job_id()#调用fate_flow/utils/job_utils模块的generate_job_id方法生成job_id
 
     initiator_party_id = request_config['migrate_initiator']['party_id']
     initiator_role = request_config['migrate_initiator']['role']
 
-    if not request_config.get("unify_model_version"):
+    if not request_config.get("unify_model_version"):#判断参数unify_model_version是否为空，若为空则令unify_model_version=job_id
         request_config["unify_model_version"] = _job_id##迁移后的模型版本=job_id
     migrate_status = True
     migrate_status_info = {}
@@ -141,10 +153,11 @@ def migrate_model_process():
 
     require_arguments = ["migrate_initiator", "role", "migrate_role", "model_id",
                          "model_version", "execute_party", "job_parameters"]
-    check_config(request_config, require_arguments)#fate_flow/utils/detect_utils.py检查参数
+    check_config(request_config, require_arguments)#调用fate_flow/utils/detect_utils模块的check_config方法检查参数
 
     try:
-        if compare_roles(request_config.get("migrate_role"), request_config.get("role")):#fate_flow.pipelined_model.migrate_model对比迁移前的角色配置和迁移后的角色配置
+        #5调用fate_flow/pipelined/model/migrate_model模块的compare_roles方法对比迁移前的角色配置和迁移后的角色配置，若相同返回错误信息
+        if compare_roles(request_config.get("migrate_role"), request_config.get("role")):
             return get_json_result(retcode=100,
                                    retmsg="The config of previous roles is the same with that of migrate roles. "
                                           "There is no need to migrate model. Migration process aborting.")
@@ -159,6 +172,7 @@ def migrate_model_process():
 
     res_dict = {}
 
+    #为每一个执行迁移的参与方生成local_res，包含要模型迁移到的参与方id
     for role_name, role_partys in request_config.get("migrate_role").items():
         for offset, party_id in enumerate(role_partys):
             local_res = deepcopy(local_template)
@@ -175,6 +189,7 @@ def migrate_model_process():
         for party_id in role_partys:
             request_config["local"] = res_dict.get(role_name).get(party_id)##获取某个参与方的配置
             try:
+                #7将request_config作为参数，循环调用fate_flow/utils/api_utils模块的federated_api方法执行模型迁移
                 response = federated_api(job_id=_job_id,
                                          method='POST',
                                          endpoint='/model/migrate/do',
@@ -249,20 +264,26 @@ def do_load_model():
 
 @manager.route('/bind', methods=['POST'])
 def bind_model_service():
-    request_config = request.json
-    if request_config.get('job_id', None):
+    request_config = request.json#获取参数，将参数放入变量request_config
+    if request_config.get('job_id', None):#若请求参数包含job_id
+        #将job_id作为参数，调用fate_flow / utils / model_utils模块的query_model_info方法获取job中的模型信息model_info
         retcode, retmsg, res_data = model_utils.query_model_info(model_version=request_config['job_id'], role='guest')
         if res_data:
             model_info = res_data[0]
+            #从model_info中得到发起方的角色、id和runtime_conf，将得到的数据放入变量request_config
             request_config['initiator'] = {}
             request_config['initiator']['party_id'] = str(model_info.get('f_initiator_party_id'))
             request_config['initiator']['role'] = model_info.get('f_initiator_role')
-
             runtime_conf = model_info.get('f_runtime_conf', {}) if model_info.get('f_runtime_conf', {}) else model_info.get('f_train_runtime_conf', {})
+
+            #将runtime_conf作为参数，调用fate_flow/utils/config_adapter模块得到adapter对象
             adapter = JobRuntimeConfigAdapter(runtime_conf)
+
+            #通过adapter对象调用fate_flow/utils/config_adapter模块的get_common_parameters方法得到job的参数放入变量request_config
             job_parameters = adapter.get_common_parameters().to_dict()
             request_config['job_parameters'] = job_parameters if job_parameters else model_info.get('f_train_runtime_conf', {}).get('job_parameters')
 
+            #从runtime_conf中得到role信息，将得到的数据放入变量request_config
             roles = runtime_conf.get('role')
             request_config['role'] = roles if roles else model_info.get('f_train_runtime_conf', {}).get('role')
 
@@ -280,7 +301,9 @@ def bind_model_service():
     service_id = request_config.get('service_id')
     if not service_id:
         return get_json_result(retcode=101, retmsg='no service id')
-    check_config(request_config, ['initiator', 'role', 'job_parameters'])
+    check_config(request_config, ['initiator', 'role', 'job_parameters'])#调用fate_flow/utils/detect_utils模块的check_config方法检查参数
+
+    # 将request_config作为参数，调用fate_flow / pipelined_model / publish_model模块的bind_model_service方法绑定模型
     bind_status, retmsg = publish_model.bind_model_service(config_data=request_config)
     operation_record(request_config, "bind", "success" if not bind_status else "failed")
     return get_json_result(retcode=bind_status, retmsg='service id is {}'.format(service_id) if not retmsg else retmsg)
@@ -288,22 +311,24 @@ def bind_model_service():
 
 @manager.route('/transfer', methods=['post'])
 def transfer_model():
-    model_data = publish_model.download_model(request.json)
+    model_data = publish_model.download_model(request.json)#调用fate_flow/pipelined_model/publish_model模块的download_model方法下载模型信息
     return get_json_result(retcode=0, retmsg="success", data=model_data)
 
 
 @manager.route('/<model_operation>', methods=['post', 'get'])
 def operate_model(model_operation):
-    request_config = request.json or request.form.to_dict()
-    job_id = job_utils.generate_job_id()#fate_flow/utils/job_utils模块生成job_id
+    request_config = request.json or request.form.to_dict()#获取参数，存入变量request_config
+    job_id = job_utils.generate_job_id()#调用fate_flow/utils/job_utils模块的generate_job_id方法生成job_id
     if model_operation not in [ModelOperation.STORE, ModelOperation.RESTORE, ModelOperation.EXPORT, ModelOperation.IMPORT]:
         raise Exception('Can not support this operating now: {}'.format(model_operation))
     required_arguments = ["model_id", "model_version", "role", "party_id"]
-    check_config(request_config, required_arguments=required_arguments)
+    check_config(request_config, required_arguments=required_arguments)#调用fate_flow/utils/detect_utils模块的check_config方法检查参数
+    #将model_id、role、party_id作为参数，调用fate_flow/utils/model_utils模块的gen_party_model_id方法生成mode_id，并替换request_config中的mode_id
     request_config["model_id"] = gen_party_model_id(model_id=request_config["model_id"], role=request_config["role"], party_id=request_config["party_id"])
     if model_operation in [ModelOperation.EXPORT, ModelOperation.IMPORT]:
         if model_operation == ModelOperation.IMPORT:
             try:
+                #读取请求中的文件，并保存
                 file = request.files.get('file')
                 file_path = os.path.join(TEMP_DIRECTORY, file.filename)#TEMP_DIRECTORY/file.filename
                 # if not os.path.exists(file_path):
@@ -315,10 +340,13 @@ def operate_model(model_operation):
                 except Exception as e:
                     shutil.rmtree(file_path)
                     raise e
-                request_config['file'] = file_path
+                request_config['file'] = file_path#将文件保存的目录存入request_config的file字段
+                #将mode_id、model_version作为参数，调用fate_flow/pipelined_model/pipelined_model模块的PipelinedModel方法生成模型对象model
                 model = pipelined_model.PipelinedModel(model_id=request_config["model_id"], model_version=request_config["model_version"])
+                #通过model对象调用fate_flow/pipelined_model/pipelined_model模块的unpack_model方法解析模型文件
                 model.unpack_model(file_path)
 
+                #从pipeline中读取train_runtime_conf，并从train_runtime_conf中读取参与方角色
                 pipeline = model.read_component_model('pipeline', 'pipeline')['Pipeline']
                 train_runtime_conf = json_loads(pipeline.train_runtime_conf)
                 permitted_party_id = []
@@ -329,15 +357,19 @@ def operate_model(model_operation):
                     shutil.rmtree(model.model_path)
                     raise Exception("party id {} is not in model roles, please check if the party id is valid.")
                 try:
+                    #将train_runtime_conf作为参数，调用fate_flow/utils/config_adapter模块获取一个adapter对象
                     adapter = JobRuntimeConfigAdapter(train_runtime_conf)
+                    # 通过adapter对象调用fate_flow / utils / config_adapter模块的get_common_parameters方法得到job的参数job_paramters
                     job_parameters = adapter.get_common_parameters().to_dict()
+
+                    #调用fate_flow/db/db_models模块连接模型数据库
                     with DB.connection_context():
                         db_model = MLModel.get_or_none(
                             MLModel.f_job_id == job_parameters.get("model_version"),
                             MLModel.f_role == request_config["role"]
                         )
                     if not db_model:
-                        model_info = model_utils.gather_model_info_data(model)
+                        model_info = model_utils.gather_model_info_data(model)#将model对象作为参数，调用fate_flow/utils/model_utils模块的gather_model_info_data方法获取模型信息
                         model_info['imported'] = 1
                         model_info['job_id'] = model_info['f_model_version']
                         model_info['size'] = model.calculate_model_file_size()
@@ -349,8 +381,8 @@ def operate_model(model_operation):
                             model_info['initiator_party_id'] = model_info.get('f_train_runtime_conf', {}).get( 'initiator', {}).get('party_id')
                             model_info['work_mode'] = adapter.get_job_work_mode()
                             model_info['parent'] = False if model_info.get('f_inference_dsl') else True
-                        model_utils.save_model_info(model_info)
-                    else:
+                        model_utils.save_model_info(model_info)#调用fate_flow/utils/model_utils模块的save_model_info方法保存模型信息
+                    else:#若模型已经存在则返回错误
                         stat_logger.info(f'job id: {job_parameters.get("model_version")}, '
                                          f'role: {request_config["role"]} model info already existed in database.')
                 except peewee.IntegrityError as e:
@@ -360,11 +392,12 @@ def operate_model(model_operation):
             except Exception:
                 operation_record(request_config, "import", "failed")
                 raise
-        else:
+        else:#模型输出
             try:
+                #将mode_id、model_version作为参数，调用fate_flow/pipelined_model/pipelined_model模块的PipelinedModel方法生成模型对象model
                 model = pipelined_model.PipelinedModel(model_id=request_config["model_id"], model_version=request_config["model_version"])
                 if model.exists():
-                    archive_file_path = model.packaging_model()
+                    archive_file_path = model.packaging_model()#通过model对象调用packaging_model方法打包模型并返回模型文件
                     operation_record(request_config, "export", "success")
                     return send_file(archive_file_path, attachment_filename=os.path.basename(archive_file_path), as_attachment=True)
                 else:
@@ -377,9 +410,11 @@ def operate_model(model_operation):
                 operation_record(request_config, "export", "failed")
                 stat_logger.exception(e)
                 return error_response(response_code=210, retmsg=str(e))
-    else:
+    else:#模型存储、模型恢复
         data = {}
+        #生成dsl和runtime_conf
         job_dsl, job_runtime_conf = gen_model_operation_job_config(request_config, model_operation)
+        #调用fate_flow/scheduler/dag_scheduler模块的submit方法提交job
         submit_result = DAGScheduler.submit({'job_dsl': job_dsl, 'job_runtime_conf': job_runtime_conf}, job_id=job_id)
         data.update(submit_result)
         operation_record(data=job_runtime_conf, oper_type=model_operation, oper_status='')
@@ -414,7 +449,7 @@ def tag_model(operation):
                                                                          model.f_model_version,
                                                                          tag.f_name))
         delete_query = ModelTag.delete().where(ModelTag.f_m_id == model.f_model_version, ModelTag.f_t_id == tag.f_id)
-        delete_query.execute()##删除对应的tag
+        delete_query.execute()##根据模型版本和tag id删除对应的tag
         return get_json_result(retmsg="'{}' tag has been removed from tag list of model {} {}.".format(request_data.get('tag_name'),
                                                                                                        model.f_model_id,
                                                                                                        model.f_model_version))
@@ -422,17 +457,17 @@ def tag_model(operation):
         if not str(request_data.get('tag_name')):
             raise Exception("Tag name should not be an empty string.")
         tag = Tag.get_or_none(Tag.f_name == request_data.get('tag_name'))#将tag_name作为参数，调用fate_flow/db/db_models模块检查数据库中是否存在
-        if not tag:##若不存在则写入tag_name
+        if not tag:##若不存在则写入
             tag = Tag()
             tag.f_name = request_data.get('tag_name')
             tag.save(force_insert=True)
-        else:#将模型版本作为参数，判断模型是否被该tag标记
+        else:#将模型版本作为参数，判断模型是否拥有该tag
             tags = (Tag.select().join(ModelTag, on=ModelTag.f_t_id == Tag.f_id).where(ModelTag.f_m_id == model.f_model_version))
             if tag.f_name in [t.f_name for t in tags]:##若模型被tag标记抛出异常
                 raise Exception("Model {} {} already been tagged as tag '{}'.".format(model.f_model_id,
                                                                                       model.f_model_version,
                                                                                       tag.f_name))
-        ModelTag.create(f_t_id=tag.f_id, f_m_id=model.f_model_version)
+        ModelTag.create(f_t_id=tag.f_id, f_m_id=model.f_model_version)#将模型版本和id存入tag中
         return get_json_result(retmsg="Adding {} tag for model with job id: {} successfully.".format(request_data.get('tag_name'),
                                                                                                      request_data.get('job_id')))
 
@@ -442,24 +477,24 @@ def tag_model(operation):
 def operate_tag(tag_operation):
     request_data = request.json
     if tag_operation not in [TagOperation.CREATE, TagOperation.RETRIEVE, TagOperation.UPDATE,
-                             TagOperation.DESTROY, TagOperation.LIST]:
+                             TagOperation.DESTROY, TagOperation.LIST]:#判断操作是否合法
         raise Exception('The {} operation is not currently supported.'.format(tag_operation))
 
     tag_name = request_data.get('tag_name')
     tag_desc = request_data.get('tag_desc')
-    if tag_operation == TagOperation.CREATE:
+    if tag_operation == TagOperation.CREATE:##tag创建
         try:
             if not tag_name:
                 return get_json_result(100, "'{}' tag created failed. Please input a valid tag name.".format(tag_name))
             else:
-                Tag.create(f_name=tag_name, f_desc=tag_desc)
+                Tag.create(f_name=tag_name, f_desc=tag_desc)#以tag_name和tag_desc为参数，调用fate_flow.db.db_models模块在数据库中创建tag
         except peewee.IntegrityError:
             raise Exception("'{}' has already exists in database.".format(tag_name))
         else:
             return get_json_result("'{}' tag has been created successfully.".format(tag_name))
 
-    elif tag_operation == TagOperation.LIST:
-        tags = Tag.select()
+    elif tag_operation == TagOperation.LIST:##tag列表
+        tags = Tag.select()#调用fate_flow.db.db_models模块从数据库获取tag列表
         limit = request_data.get('limit')
         res = {"tags": []}
 
@@ -472,18 +507,19 @@ def operate_tag(tag_operation):
                                 'model_count': ModelTag.filter(ModelTag.f_t_id == tag.f_id).count()})
         return get_json_result(data=res)
 
-    else:
-        if not (tag_operation == TagOperation.RETRIEVE and not request_data.get('with_model')):
+    else:##检索、更新、销毁
+        if not (tag_operation == TagOperation.RETRIEVE and not request_data.get('with_model')):#操作不是检索或者参数中有with_model？？
             try:
-                tag = Tag.get(Tag.f_name == tag_name)
+                tag = Tag.get(Tag.f_name == tag_name)#以tag_name为参数，调用fate_flow.db.db_models模块从数据库获取tag
             except peewee.DoesNotExist:
                 raise Exception("Can not found '{}' tag.".format(tag_name))
 
-        if tag_operation == TagOperation.RETRIEVE:
-            if request_data.get('with_model', False):
+        if tag_operation == TagOperation.RETRIEVE:#tag检索
+            if request_data.get('with_model', False):#有with_model参数
                 res = {'models': []}
+                #从数据库中查找该tag标记的模型
                 models = (MLModel.select().join(ModelTag, on=ModelTag.f_m_id == MLModel.f_model_version).where(ModelTag.f_t_id == tag.f_id))
-                for model in models:
+                for model in models:#获取模型信息
                         res["models"].append({
                         "model_id": model.f_model_id,
                         "model_version": model.f_model_version,
@@ -491,25 +527,25 @@ def operate_tag(tag_operation):
                         "role": model.f_role,
                         "party_id": model.f_party_id
                     })
-                res["count"] = models.count()
-                return get_json_result(data=res)
-            else:
-                tags = Tag.filter(Tag.f_name.contains(tag_name))
+                res["count"] = models.count()#计算模型数量
+                return get_json_result(data=res)#返回模型的信息
+            else:#参数不包含with_model
+                tags = Tag.filter(Tag.f_name.contains(tag_name))#从数据库获取名称中包含tag_name的tag
                 if not tags:
                     return get_json_result(100, retmsg="No tags found.")
                 res = {'tags': []}
                 for tag in tags:
                     res['tags'].append({'name': tag.f_name, 'description': tag.f_desc})
-                return get_json_result(data=res)
+                return get_json_result(data=res)#返回tag的信息
 
         elif tag_operation == TagOperation.UPDATE:
             new_tag_name = request_data.get('new_tag_name', None)
             new_tag_desc = request_data.get('new_tag_desc', None)
-            if (tag.f_name == new_tag_name) and (tag.f_desc == new_tag_desc):
+            if (tag.f_name == new_tag_name) and (tag.f_desc == new_tag_desc):#判断新的名称、描述与原名称、描述是否相同，相同则抛出错误
                 return get_json_result(100, "Nothing to be updated.")
             else:
                 if request_data.get('new_tag_name'):
-                    if not Tag.get_or_none(Tag.f_name == new_tag_name):
+                    if not Tag.get_or_none(Tag.f_name == new_tag_name):##判断名称为new_tag_name的tag是否存在，存在着抛出错误
                         tag.f_name = new_tag_name
                     else:
                         return get_json_result(100, retmsg="'{}' tag already exists.".format(new_tag_name))
@@ -518,10 +554,10 @@ def operate_tag(tag_operation):
                 tag.save()
                 return get_json_result(retmsg="Infomation of '{}' tag has been updated successfully.".format(tag_name))
 
-        else:
+        else:#tag删除
             delete_query = ModelTag.delete().where(ModelTag.f_t_id == tag.f_id)
             delete_query.execute()
-            Tag.delete_instance(tag)
+            Tag.delete_instance(tag)#在数据库中执行删除操作
             return get_json_result(retmsg="'{}' tag has been deleted successfully.".format(tag_name))
 
 
@@ -590,6 +626,7 @@ def operation_record(data: dict, oper_type, oper_status):
 
 @manager.route('/query', methods=['POST'])
 def query_model():
+    #调用fate_flow\utils\model_utils模块的query_model_info方法获取模型
     retcode, retmsg, data = model_utils.query_model_info(**request.json)
     result = {"retcode": retcode, "retmsg": retmsg, "data": data}
     return Response(json.dumps(result, sort_keys=False, cls=DatetimeEncoder), mimetype="application/json")
@@ -599,29 +636,33 @@ def query_model():
 def deploy():
     request_data = request.json
     require_parameters = ['model_id', 'model_version']
-    check_config(request_data, require_parameters)
+    check_config(request_data, require_parameters)#调用fate_flow.utils.detect_utils模块的check_config方法检查参数
     model_id = request_data.get("model_id")
     model_version = request_data.get("model_version")
+    #将model_version和model_id作为参数，调用fate_flow\utils\model_utils模块的query_model_info_from_file方法获取模型信息model_info
     retcode, retmsg, model_info = model_utils.query_model_info_from_file(model_id=model_id, model_version=model_version, to_dict=True)
     if not model_info:
         raise Exception(f'Deploy model failed, no model {model_id} {model_version} found.')
     else:
+        #遍历model_info中每个key、value，找到key中发起方角色、id和value中发起方角色、id相同的(key,value)对
         for key, value in model_info.items():
-            version_check = model_utils.compare_version(value.get('f_fate_version'), '1.5.0')
+            version_check = model_utils.compare_version(value.get('f_fate_version'), '1.5.0')##检查fate版本
             if version_check == 'lt':
                 continue
             else:
+                #从key中获取发起方角色和id
                 init_role = key.split('/')[-2].split('#')[0]
                 init_party_id = key.split('/')[-2].split('#')[1]
+                #从value中获取发起方角色和id
                 model_init_role = value.get('f_initiator_role') if value.get('f_initiator_role') else value.get('f_train_runtime_conf', {}).get('initiator', {}).get('role', '')
                 model_init_party_id = value.get('f_initiator_role_party_id') if value.get('f_initiator_role_party_id') else value.get('f_train_runtime_conf', {}).get('initiator', {}).get('party_id', '')
-                if (init_role == model_init_role) and (init_party_id == str(model_init_party_id)):
+                if (init_role == model_init_role) and (init_party_id == str(model_init_party_id)):##判断从key中获取的发起方角色、id与value中获取的发起方角色、id是否相同
                     break
-        else:
+        else:#每个key中获取的发起方角色、id与value中获取的发起方角色、id都不相同
             raise Exception("Deploy model failed, can not found model of initiator role or the fate version of model is older than 1.5.0")
 
         # distribute federated deploy task
-        _job_id = job_utils.generate_job_id()
+        _job_id = job_utils.generate_job_id()#调用fate_flow\utils\job_utils模块的generate_job_id方法生成job_id
         request_data['child_model_version'] = _job_id
 
         initiator_party_id = model_init_party_id
@@ -637,12 +678,12 @@ def deploy():
                 continue
             deploy_status_info[role_name] = deploy_status_info.get(role_name, {})
             deploy_status_info['detail'][role_name] = {}
-            adapter = JobRuntimeConfigAdapter(value.get("f_train_runtime_conf", {}))
-            work_mode = adapter.get_job_work_mode()
+            adapter = JobRuntimeConfigAdapter(value.get("f_train_runtime_conf", {}))#将从value得到的f_train_runtime_conf作为参数，调用fate_flow.utils.config_adapter模块生成adapter对象
+            work_mode = adapter.get_job_work_mode()#通过adapter对象调用get_job_work_mode方法获取work_mode
 
             for _party_id in role_partys:
                 request_data['local'] = {'role': role_name, 'party_id': _party_id}
-                try:
+                try:#对于f_train_runtime_conf中的每一方，调用fate_flow.utils.api_utils模块的federated_api方法发起联邦部署任务
                     response = federated_api(job_id=_job_id,
                                              method='POST',
                                              endpoint='/model/deploy/do',
@@ -681,7 +722,7 @@ def do_deploy():
 def get_predict_dsl():
     request_data = request.json
     request_data['query_filters'] = ['inference_dsl']
-    retcode, retmsg, data = model_utils.query_model_info_from_file(**request_data)
+    retcode, retmsg, data = model_utils.query_model_info_from_file(**request_data)#调用fate_flow.utils.model_utils模块的query_model_info_from_file方法获取模型信息
     if data:
         if request_data.get("filename"):
             os.makedirs(TEMP_DIRECTORY, exist_ok=True)
@@ -700,24 +741,26 @@ def get_predict_dsl():
 def get_predict_conf():
     request_data = request.json
     required_parameters = ['model_id', 'model_version']
-    check_config(request_data, required_parameters)
-    model_dir = os.path.join(get_project_base_directory(), 'model_local_cache')
-    model_fp_list = glob.glob(model_dir + f"/guest#*#{request_data['model_id']}/{request_data['model_version']}")
+    check_config(request_data, required_parameters)#调用fate_flow.utils.detect_utils模块的check_config方法检查参数
+    model_dir = os.path.join(get_project_base_directory(), 'model_local_cache')#调用fate_arch.common.file_utils模块的get_project_base_directory方法生成模型路径model_dir
+    model_fp_list = glob.glob(model_dir + f"/guest#*#{request_data['model_id']}/{request_data['model_version']}")#将model_dir、model_id、model_version作为参数，生成model_fp_list
     if model_fp_list:
-        fp = model_fp_list[0]
-        pipeline_model = PipelinedModel(model_id=fp.split('/')[-2], model_version=fp.split('/')[-1])
+        fp = model_fp_list[0]#获取model_fp_list[0]，从中获取model_id和model_version
+        pipeline_model = PipelinedModel(model_id=fp.split('/')[-2], model_version=fp.split('/')[-1])#将得到的model_id和model_version作为参数，调用fate_flow.pipelined_model.pipelined_model模块生成pipeline_model对象
+        #通过pipeline_model对象调用read_component_model方法得到pipeline
         pipeline = pipeline_model.read_component_model('pipeline', 'pipeline')['Pipeline']
+        #从pipeline获取predict_dsl和train_runtime_conf
         predict_dsl = json_loads(pipeline.inference_dsl)
 
         train_runtime_conf = json_loads(pipeline.train_runtime_conf)
-        parser = schedule_utils.get_dsl_parser_by_version(train_runtime_conf.get('dsl_version', '1') )
+        parser = schedule_utils.get_dsl_parser_by_version(train_runtime_conf.get('dsl_version', '1') )#调用fate_flow.utils.schedule_utils模块的get_dsl_parser_by_version方法得到parser对象
         predict_conf = parser.generate_predict_conf_template(predict_dsl=predict_dsl, train_conf=train_runtime_conf,
                                                      model_id=request_data['model_id'],
-                                                     model_version=request_data['model_version'])
+                                                     model_version=request_data['model_version'])#将predict dsl、train_runtime_conf、model_version、model_id作为参数，通过parser对象调用generate_predict_conf_template方法生成predict_conf
     else:
         predict_conf = ''
     if predict_conf:
-        if request_data.get("filename"):
+        if request_data.get("filename"):#存储到文件
             os.makedirs(TEMP_DIRECTORY, exist_ok=True)
             temp_filepath = os.path.join(TEMP_DIRECTORY, request_data.get("filename"))
             with open(temp_filepath, "w") as fout:

@@ -30,18 +30,19 @@ def internal_server_error(e):
 
 @manager.route('/grant/privilege', methods=['post'])
 def grant_permission():
-    modify_permission(request.json)
+    modify_permission(request.json)#调用fate_flow.utils.authentication_utils模块的modify_permission方法授予权限
     return get_json_result(retcode=0, retmsg='success')
 
 
 @manager.route('/delete/privilege', methods=['post'])
 def delete_permission():
-    modify_permission(request.json, delete=True)
+    modify_permission(request.json, delete=True)#调用fate_flow.utils.authentication_utils模块的modify_permission方法删除权限
     return get_json_result(retcode=0, retmsg='success')
 
 
 @manager.route('/query/privilege', methods=['post'])
 def query_privilege():
+    #调用fate_flow.utils.authentication_utils模块的get_permission_config方法查询权限
     privilege_dict = PrivilegeAuth.get_permission_config(request.json.get('src_party_id'), request.json.get('src_role'))
     return get_json_result(retcode=0, retmsg='success', data={'src_party_id': request.json.get('src_party_id'),
                                                               'role': request.json.get('src_role'),
