@@ -35,24 +35,32 @@ def internal_server_error(e):
 @manager.route('/add', methods=['post'])
 def table_add():
     request_data = request.json
+    #调用fate_flow.utils.detect_utils模块的check_config方法检查参数
     detect_utils.check_config(request_data, required_arguments=["engine", "address", "namespace", "name", ("head", (0, 1)), "id_delimiter"])
+
     address_dict = request_data.get('address')
     engine = request_data.get('engine')
     name = request_data.get('name')
     namespace = request_data.get('namespace')
+
+    #以engine和address_dict为参数，调用fate_arch.storage模块的create_address方法生成address对象
     address = storage.StorageTableMeta.create_address(storage_engine=engine, address_dict=address_dict)
     in_serialized = request_data.get("in_serialized", 1 if engine in {storage.StorageEngine.STANDALONE, storage.StorageEngine.EGGROLL} else 0)
     destroy = (int(request_data.get("drop", 0)) == 1)
+    #以name和namespace为参数，调用fate_arch.storage模块生成data_table_meta对象
     data_table_meta = storage.StorageTableMeta(name=name, namespace=namespace)
     if data_table_meta:
         if destroy:
+            #若drop参数为1，则通过data_table_meta对象调用destroy_metas方法从数据库中删除元数据
             data_table_meta.destroy_metas()
         else:
             return get_json_result(retcode=100,
                                    retmsg='The data table already exists.'
                                           'If you still want to continue uploading, please add the parameter -drop.'
                                           '1 means to add again after deleting the table')
+    #以engine、options为参数，调用fate_arch.storage._session模块的build方法生成session
     with storage.Session.build(storage_engine=engine, options=request_data.get("options")) as storage_session:
+        #通过session对象调用create_table方法新增table
         storage_session.create_table(address=address, name=name, namespace=namespace, partitions=request_data.get('partitions', None),
                                      hava_head=request_data.get("head"), id_delimiter=request_data.get("id_delimiter"), in_serialized=in_serialized)
     return get_json_result(data={"table_name": name, "namespace": namespace})
@@ -64,10 +72,11 @@ def table_delete():
     table_name = request_data.get('table_name')
     namespace = request_data.get('namespace')
     data = None
+    # 以table_name、namespace为参数，调用fate_arch.storage._session模块的build方法生成storage_session
     with storage.Session.build(name=table_name, namespace=namespace) as storage_session:
-        table = storage_session.get_table()
+        table = storage_session.get_table()#通过storage_session对象调用get_table方法获取table对象
         if table:
-            table.destroy()
+            table.destroy()#通过table对象调用destroy方法删除table
             data = {'table_name': table_name, 'namespace': namespace}
     if data:
         return get_json_result(data=data)
@@ -76,11 +85,13 @@ def table_delete():
 
 @manager.route('/list', methods=['post'])
 def get_job_table_list():
+    # 调用fate_flow.utils.detect_utils模块的check_config方法检查参数
     detect_utils.check_config(config=request.json, required_arguments=['job_id', 'role', 'party_id'])
+    #调用fate_flow.utils.detect_utils模块的query_job方法获取job
     jobs = JobSaver.query_job(**request.json)
     if jobs:
         job = jobs[0]
-        tables = get_job_all_table(job)
+        tables = get_job_all_table(job)#获取job中的table
         return get_json_result(data=tables)
     else:
         return get_json_result(retcode=101, retmsg='no find job')
@@ -113,14 +124,18 @@ def table_api(table_func):
 
 
 def get_job_all_table(job):
+    #将job的dsl、runtime_conf、train_runtime_conf作为参数，调用fate_flow.utils.schedule_utils模块的get_job_dsl_parser方法得到dsl_parser对象
     dsl_parser = schedule_utils.get_job_dsl_parser(dsl=job.f_dsl,
                                                    runtime_conf=job.f_runtime_conf,
                                                    train_runtime_conf=job.f_train_runtime_conf
                                                    )
+    #通过dsl_parser对象调用get_dsl_hierarchical_structure方法得到hierarchical_structure
     _, hierarchical_structure = dsl_parser.get_dsl_hierarchical_structure()
     component_table = {}
+    #将job_id，role，party_id作为参数，调用fate_flow.operation.job_tracker模块的query_output_data_infos方法获取组件输出表
     component_output_tables = Tracker.query_output_data_infos(job_id=job.f_job_id, role=job.f_role,
                                                               party_id=job.f_party_id)
+    #获取每个组件的输入table和输出table
     for component_name_list in hierarchical_structure:
         for component_name in component_name_list:
             component_table[component_name] = {}
