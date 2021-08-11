@@ -28,18 +28,25 @@ def internal_server_error(e):
     stat_logger.exception(e)
     return get_json_result(retcode=100, retmsg=str(e))
 
-
+# 获取版本信息
+# module
 @manager.route('/get', methods=['POST'])
 def get_fate_version_info():
+    # 调用fate_flow.entity.runtime_config模块的RuntimeConfig类的get_env方法得到版本信息
     version = RuntimeConfig.get_env(request.json.get('module', 'FATE'))
     return get_json_result(data={request.json.get('module'): version})
 
-
+# 设置federatedId
+# federatedId
 @manager.route('/set', methods=['POST'])
 def set_fate_server_info():
     # manager
     federated_id = request.json.get("federatedId")
+
+    # 调用fate_arch.common.conf_utils模块的get_base_config方法得到manager_conf
     manager_conf = conf_utils.get_base_config("fatemanager", {})
     manager_conf["federatedId"] = federated_id
+
+    # 调用fate_arch.common.conf_utils模块的update_config方法更新federatedId
     conf_utils.update_config("fatemanager", manager_conf)
     return get_json_result(data={"federatedId": federated_id})
