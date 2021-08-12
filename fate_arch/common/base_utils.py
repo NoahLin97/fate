@@ -73,6 +73,7 @@ def json_loads(src, object_pairs_hook=None):
         return json.loads(src, object_pairs_hook=object_pairs_hook)
 
 
+# current_timestamp方法返回当前时间戳
 def current_timestamp():
     return int(time.time() * 1000)
 

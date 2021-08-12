@@ -101,6 +101,7 @@ class StorageSessionBase(StorageSessionABC):
         if not name or not namespace:
             name = self._default_name
             namespace = self._default_namespace
+        # 调用fate_arch.storage._table中的StorageTableMeta
         meta = StorageTableMeta(name=name, namespace=namespace)
         if meta:
             table = self.table(name=meta.get_name(),

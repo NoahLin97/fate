@@ -21,6 +21,9 @@ class RunParameters(object):
     # 初始化RunParameters类
     def __init__(self, **kwargs):
         self.job_type = "train"
+        # 从fate_arch.common中调用了WorkMode, Backend
+        # WorkMode表示工作模式，1为集群，0为单机
+        # Backend设置fate使用的计算引擎，有spark和eggroll
         self.work_mode = WorkMode.STANDALONE
         self.backend = Backend.EGGROLL  # Pre-v1.5 configuration item
         self.computing_engine = None

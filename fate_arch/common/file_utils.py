@@ -23,7 +23,7 @@ from ruamel import yaml
 
 PROJECT_BASE = os.getenv("FATE_DEPLOY_BASE")
 
-
+# 获取文件项目的基础路径
 def get_project_base_directory():
     global PROJECT_BASE
     if PROJECT_BASE is None:

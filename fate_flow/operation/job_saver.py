@@ -189,6 +189,7 @@ class JobSaver(object):
 
     @classmethod
     @DB.connection_context()
+    # 查询对应job_id的job
     def query_job(cls, reverse=None, order_by=None, **kwargs):
         filters = []
         for f_n, f_v in kwargs.items():

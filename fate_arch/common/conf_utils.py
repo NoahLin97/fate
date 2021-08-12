@@ -27,7 +27,8 @@ def conf_realpath(conf_name):
 
 # 获得基础的config
 def get_base_config(key, default=None, conf_name=SERVICE_CONF):
-    # 从fate_arch.common调用file_utils模块，load_yaml_conf方法根据config路径获取对应的yaml文件内容
+    # 从fate_arch.common调用file_utils模块
+    # load_yaml_conf方法根据config路径获取对应的yaml文件内容
     base_config = file_utils.load_yaml_conf(conf_path=conf_realpath(conf_name=conf_name)) or dict()
     return base_config.get(key, default)
 

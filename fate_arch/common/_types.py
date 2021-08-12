@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-
+# WorkMode表示工作模式，1为集群，0为单机
 class WorkMode(IntEnum):
     STANDALONE = 0
     CLUSTER = 1
@@ -11,7 +11,7 @@ class WorkMode(IntEnum):
     def is_cluster(self):
         return self.value == self.CLUSTER
 
-
+# Backend设置fate使用的计算引擎，有spark和eggroll
 class Backend(IntEnum):
     EGGROLL = 0
     SPARK_RABBITMQ = 1

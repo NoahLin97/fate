@@ -42,6 +42,8 @@ class RuntimeConfig(object):
     @classmethod
     # 初始化环境
     def init_env(cls):
+        # init_env函数从fate_arch.common.versions中调用get_versions()方法
+        # 从fate.env中获取环境变量
         RuntimeConfig.ENV.update(get_versions())
 
     @classmethod

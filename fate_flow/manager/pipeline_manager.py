@@ -20,14 +20,17 @@ from fate_flow.operation.job_saver import JobSaver
 # 检查pipeline的dag依赖是否正确，其中检查config和dsl
 def pipeline_dag_dependency(job_info):
     try:
+        # 从fate_flow.utils中调用detect_utils模块的check_config函数
         # 检查cofig是否正确
         detect_utils.check_config(job_info, required_arguments=["party_id", "role"])
         if job_info.get('job_id'):
+            # 从fate_flow.operation.job_saver中调用JobSaver模块的query_job函数
             # 查询对应job_id的job
             jobs = JobSaver.query_job(job_id=job_info["job_id"], party_id=job_info["party_id"], role=job_info["role"])
             if not jobs:
                 raise Exception('query job {} failed'.format(job_info.get('job_id', '')))
             job = jobs[0]
+            # 从fate_flow.utils中调用schedule_utils模块的get_job_dsl_parser函数
             # 得到对应job_id的dsl解析器
             job_dsl_parser = schedule_utils.get_job_dsl_parser(dsl=job.f_dsl,
                                                                runtime_conf=job.f_runtime_conf_on_party,
