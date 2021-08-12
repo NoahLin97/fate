@@ -25,7 +25,7 @@ from fate_arch.common import file_utils
 from fate_arch.protobuf.python import default_empty_fill_pb2
 from fate_flow.settings import stat_logger, TEMP_DIRECTORY
 
-
+# 定义一个管道模型
 class PipelinedModel(object):
     def __init__(self, model_id, model_version):
         """
@@ -77,6 +77,7 @@ class PipelinedModel(object):
                                    model_proto_index=model_proto_index)
         stat_logger.info("Save {} {} successfully".format(component_name, model_alias))
 
+    # 读取组件模型
     def read_component_model(self, component_name, model_alias):
         component_model_storage_path = os.path.join(self.variables_data_path, component_name, model_alias)
         model_proto_index = self.get_model_proto_index(component_name=component_name,
@@ -89,8 +90,10 @@ class PipelinedModel(object):
                                                                     buffer_object_serialized_string=buffer_object_serialized_string)
         return model_buffers
 
+    # 收集模型，返回模型数据
     def collect_models(self, in_bytes=False, b64encode=True):
         model_buffers = {}
+        # 打开文件
         with open(self.define_meta_path, "r", encoding="utf-8") as fr:
             define_index = yaml.safe_load(fr)
             for component_name in define_index.get("model_proto", {}).keys():
@@ -133,6 +136,7 @@ class PipelinedModel(object):
                                                                               archive_file_path))
         return archive_file_path
 
+    # 拆解模型
     def unpack_model(self, archive_file_path: str):
         if os.path.exists(self.model_path):
             raise Exception("Model {} {} local cache already existed".format(self.model_id, self.model_version))

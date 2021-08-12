@@ -24,7 +24,9 @@ from fate_flow.pipelined_model.pipelined_model import PipelinedModel
 from fate_flow.utils.model_utils import check_before_deploy
 from fate_flow.utils.schedule_utils import get_dsl_parser_by_version
 
-
+# 部署模型
+# 被调：
+# fate_client
 def deploy(config_data):
     model_id = config_data.get('model_id')
     model_version = config_data.get('model_version')
@@ -33,8 +35,14 @@ def deploy(config_data):
     child_model_version = config_data.get('child_model_version')
 
     try:
+        # 从fate_flow.utils导入model_utils模块中的gen_party_model_id函数
+        # 生成某方模型id
         party_model_id = model_utils.gen_party_model_id(model_id=model_id, role=local_role, party_id=local_party_id)
+        # 从pipelined_model导入PipelinedModel类
+        # 初始化PipelinedModel类
         model = PipelinedModel(model_id=party_model_id, model_version=model_version)
+        # 从pipelined_model导入PipelinedModel中的collect_models函数
+        # 收集模型，返回模型数据
         model_data = model.collect_models(in_bytes=True)
         if "pipeline.pipeline:Pipeline" not in model_data:
             raise Exception("Can not found pipeline file in model.")
@@ -49,12 +57,20 @@ def deploy(config_data):
         pipeline = deploy_model.read_component_model('pipeline', 'pipeline')['Pipeline']
 
         # modify two pipeline files (model version/ train_runtime_conf)
+        # 从fate_arch.common.base_utils导入json_loads
+        # 载入json
         train_runtime_conf = json_loads(pipeline.train_runtime_conf)
+        # 从fate_flow.utils.config_adapter导入JobRuntimeConfigAdapter类
+        # 初始化JobRuntimeConfigAdapter类
         adapter = JobRuntimeConfigAdapter(train_runtime_conf)
+        # 从fate_flow.utils.config_adapter导入JobRuntimeConfigAdapter类中的update_model_id_version函数
+        # 更新对应模型id的版本
         train_runtime_conf = adapter.update_model_id_version(model_version=deploy_model.model_version)
         pipeline.model_version = child_model_version
         pipeline.train_runtime_conf = json_dumps(train_runtime_conf, byte=True)
 
+        # 从fate_flow.utils.schedule_utils导入get_dsl_parser_by_version方法
+        # 通过版本号得到dsl的解析器
         parser = get_dsl_parser_by_version(train_runtime_conf.get('dsl_version', '1'))
         train_dsl = json_loads(pipeline.train_dsl)
         parent_predict_dsl = json_loads(pipeline.inference_dsl)
@@ -79,7 +95,11 @@ def deploy(config_data):
                     predict_dsl = parser.deploy_component(cpn_list, train_dsl)
 
         #  save predict dsl into child model file
+        # 从fate_flow.scheduler.dsl_parser调用verify_dsl函数
+        # 验证dsl的依赖关系
         parser.verify_dsl(predict_dsl, "predict")
+        # 从fate_flow.scheduler.dsl_parser调用get_predict_dsl函数
+        # 得到预测dsl
         inference_dsl = parser.get_predict_dsl(role=local_role,
                                                predict_dsl=predict_dsl,
                                                setting_conf_prefix=os.path.join(file_utils.get_python_base_directory(),
@@ -96,7 +116,8 @@ def deploy(config_data):
         deploy_model.save_pipeline(pipeline)
         shutil.copyfile(os.path.join(deploy_model.model_path, "pipeline.pb"),
                         os.path.join(deploy_model.model_path, "variables", "data", "pipeline", "pipeline", "Pipeline"))
-
+        # 从fate_flow.utils导入model_utils中的gather_model_info_data函数
+        # 整合模型的相关数据
         model_info = model_utils.gather_model_info_data(deploy_model)
         model_info['job_id'] = model_info['f_model_version']
         model_info['size'] = deploy_model.calculate_model_file_size()

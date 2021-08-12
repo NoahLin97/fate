@@ -29,7 +29,7 @@ from fate_flow.db.db_models import DB, MachineLearningModelInfo as MLModel
 
 gen_key_string_separator = '#'
 
-
+# 生成某方模型id
 def gen_party_model_id(model_id, role, party_id):
     return gen_key_string_separator.join([role, str(party_id), model_id]) if model_id else None
 
@@ -127,7 +127,7 @@ def query_model_info_from_file(model_id=None, model_version=None, role=None, par
         return 0, 'Query model info from local model success.', res
     return 100, 'Query model info failed, cannot find model from local model files.', res
 
-
+# 整合模型的相关数据
 def gather_model_info_data(model: PipelinedModel, query_filters=None):
     if model.exists():
         pipeline = model.read_component_model('pipeline', 'pipeline')['Pipeline']

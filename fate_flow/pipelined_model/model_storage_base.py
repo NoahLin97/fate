@@ -15,9 +15,10 @@
 #
 import abc
 
-
+# 定义模型存储基类
 class ModelStorageBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
+    # 定义存储函数，将本地缓存中的模型存储到可靠的系统中
     def store(self, model_id: str, model_version: str, store_address: dict):
         """
         Store the model from local cache to a reliable system
@@ -29,6 +30,7 @@ class ModelStorageBase(metaclass=abc.ABCMeta):
         raise Exception("Subclasses must implement this function")
 
     @abc.abstractmethod
+    # 定义恢复函数，从存储系统中读取模型到本地缓存
     def restore(self, model_id: str, model_version: str, store_address: dict):
         """
         Restore model from storage system to local cache

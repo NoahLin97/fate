@@ -27,11 +27,11 @@ from fate_flow.utils import model_utils
 from federatedml.protobuf.model_migrate.model_migrate import model_migration
 from fate_flow.utils.config_adapter import JobRuntimeConfigAdapter
 
-
+# 生成模型文件路径
 def gen_model_file_path(model_id, model_version):
     return os.path.join(get_project_base_directory(), "model_local_cache", model_id, model_version)
 
-
+# 比较请求时的角色和运行时的角色是否一样
 def compare_roles(request_conf_roles: dict, run_time_conf_roles: dict):
     if request_conf_roles.keys() == run_time_conf_roles.keys():
         varify_format = True
@@ -49,26 +49,35 @@ def compare_roles(request_conf_roles: dict, run_time_conf_roles: dict):
     raise Exception("The structure of roles data of local configuration is different from "
                     "model runtime configuration's. Migration aborting.")
 
-
+# 从文件导入
 def import_from_files(config: dict):
+    # 从fate_flow.pipelined_model导入pipelined_model中的PipelinedModel类
+    # 初始化PipelinedModel类
     model = pipelined_model.PipelinedModel(model_id=config["model_id"],
                                            model_version=config["model_version"])
     if config['force']:
         model.force = True
+    # 从fate_flow.pipelined_model导入pipelined_model中的unpack_model函数
+    # 拆解模型
     model.unpack_model(config["file"])
 
-
+# 从数据库导入
 def import_from_db(config: dict):
+    # 生成模型文件路径
     model_path = gen_model_file_path(config["model_id"], config["model_version"])
     if config['force']:
         os.rename(model_path, model_path + '_backup_{}'.format(datetime.now().strftime('%Y%m%d%H%M')))
 
-
+# 迁移模型
 def migration(config_data: dict):
     try:
+        # 从fate_flow.utils导入model_utils模块中的gen_party_model_id函数
+        # 生成某方模型id
         party_model_id = model_utils.gen_party_model_id(model_id=config_data["model_id"],
                                                         role=config_data["local"]["role"],
                                                         party_id=config_data["local"]["party_id"])
+        # 从fate_flow.pipelined_model导入pipelined_model中的PipelinedModel类
+        # 初始化PipelinedModel类
         model = pipelined_model.PipelinedModel(model_id=party_model_id,
                                                model_version=config_data["model_version"])
         if not model.exists():
@@ -79,7 +88,8 @@ def migration(config_data: dict):
                 raise Exception("Unify model version {} has been occupied in database. "
                                 "Please choose another unify model version and try again.".format(
                     config_data["unify_model_version"]))
-
+        # 从pipelined_model导入PipelinedModel中的collect_models函数
+        # 收集模型，返回模型数据
         model_data = model.collect_models(in_bytes=True)
         if "pipeline.pipeline:Pipeline" not in model_data:
             raise Exception("Can not found pipeline file in model.")
@@ -91,7 +101,8 @@ def migration(config_data: dict):
 
         # migrate_model.create_pipelined_model()
         shutil.copytree(src=model.model_path, dst=migrate_model.model_path)
-
+        # 从pipelined_model导入PipelinedModel中的read_component_model函数
+        # 读取组件模型
         pipeline = migrate_model.read_component_model('pipeline', 'pipeline')['Pipeline']
 
         # Utilize Pipeline_model collect model data. And modify related inner information of model

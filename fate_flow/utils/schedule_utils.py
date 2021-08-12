@@ -75,11 +75,15 @@ def federated_order_reset(dest_partys, scheduler_partys_info):
 
 def get_parser_version_mapping():
     return {
+        # 从fate_flow.scheduler.dsl_parser导入DSLParser函数
+        # 初始化DSLParser类
         "1": DSLParser(),
+        # 从fate_flow.scheduler.dsl_parser导入DSLParserV2函数
+        # 初始化DSLParserV2类
         "2": DSLParserV2()
     }
 
-
+# 通过版本号得到dsl的解析器
 def get_dsl_parser_by_version(version: str = "1"):
     mapping = get_parser_version_mapping()
     if isinstance(version, int):
