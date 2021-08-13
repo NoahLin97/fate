@@ -29,7 +29,7 @@ def internal_server_error(e):
     return get_json_result(retcode=100, retmsg=str(e))
 
 # 获取版本信息
-# module
+# http接口
 @manager.route('/get', methods=['POST'])
 def get_fate_version_info():
     # 调用fate_flow.entity.runtime_config模块的RuntimeConfig类的get_env方法得到版本信息
@@ -37,7 +37,7 @@ def get_fate_version_info():
     return get_json_result(data={request.json.get('module'): version})
 
 # 设置federatedId
-# federatedId
+# http接口
 @manager.route('/set', methods=['POST'])
 def set_fate_server_info():
     # manager

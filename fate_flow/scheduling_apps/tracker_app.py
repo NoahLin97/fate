@@ -30,7 +30,7 @@ def internal_server_error(e):
     stat_logger.exception(e)
     return get_json_result(retcode=100, retmsg=log.exception_to_trace_string(e))
 
-# 保存metric_data
+# 保存job中指定组件的metric_data
 # 被调用：
 # fate_flow.scheduling_apps.client.tracker_client.TrackerClient的log_metric_data_common方法 以POST方式
 @manager.route('/<job_id>/<component_name>/<task_id>/<task_version>/<role>/<party_id>/metric_data/save',
@@ -47,7 +47,7 @@ def save_metric_data(job_id, component_name, task_version, task_id, role, party_
                              metrics=metrics, job_level=request_data['job_level'])
     return get_json_result()
 
-# 保存metric_meta
+# 保存job中指定组件的metric_meta
 # 被调用：
 # fate_flow.scheduling_apps.client.tracker_client.TrackerClient的set_metric_meta_common方法 以POST方式
 @manager.route('/<job_id>/<component_name>/<task_id>/<task_version>/<role>/<party_id>/metric_meta/save',
@@ -64,7 +64,7 @@ def save_metric_meta(job_id, component_name, task_version, task_id, role, party_
                              metric_meta=metric_meta, job_level=request_data['job_level'])
     return get_json_result()
 
-# 保存输出数据信息
+# 保存job中指定组件的输出数据信息
 # 被调用：
 # fate_flow.scheduling_apps.client.tracker_client.TrackerClient的log_output_data_info方法 以POST方式
 @manager.route('/<job_id>/<component_name>/<task_id>/<task_version>/<role>/<party_id>/output_data_info/save',
@@ -80,7 +80,7 @@ def save_output_data_info(job_id, component_name, task_version, task_id, role, p
                                             table_name=request_data["table_name"])
     return get_json_result()
 
-# 读取输出数据信息
+# 读取job中指定组件的输出数据信息
 # 被调用：
 # fate_flow.scheduling_apps.client.tracker_client.TrackerClient的get_output_data_info方法 以POST方式
 @manager.route('/<job_id>/<component_name>/<task_id>/<task_version>/<role>/<party_id>/output_data_info/read',
@@ -98,7 +98,7 @@ def read_output_data_info(job_id, component_name, task_version, task_id, role, p
     return get_json_result(data=response_data)
 
 
-# 保存组件summary
+# 保存job中指定组件的summary
 # 被调用：
 # fate_flow.scheduling_apps.client.tracker_client.TrackerClient的log_component_summary方法 以POST方式
 @manager.route('/<job_id>/<component_name>/<task_id>/<task_version>/<role>/<party_id>/summary/save',
@@ -113,7 +113,7 @@ def save_component_summary(job_id: str, component_name: str, task_version: int, 
     tracker.insert_summary_into_db(summary_data)
     return get_json_result()
 
-#查询组件输出数据table
+#查询job中指定组件输出数据table
 @manager.route('/<job_id>/<component_name>/<role>/<party_id>/output/table', methods=['POST'])
 def component_output_data_table(job_id, component_name, role, party_id):
     #调用fate_flow.operation.job_tracker模块的Tracker类的query_output_data_infos方法得到output_data_infos

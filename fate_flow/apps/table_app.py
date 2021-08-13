@@ -32,7 +32,8 @@ def internal_server_error(e):
     stat_logger.exception(e)
     return get_json_result(retcode=100, retmsg=str(e))
 
-##增加table
+# http接口
+## 增加table
 @manager.route('/add', methods=['post'])
 def table_add():
     request_data = request.json
@@ -45,7 +46,7 @@ def table_add():
     name = request_data.get('name')
     namespace = request_data.get('namespace')
 
-    #以engine和address_dict为参数，调用fate_arch.storage模块的create_address方法生成address对象
+    #以engine和address_dict为参数，调用fate_arch.storage模块的StorageTableMeta类的create_address方法生成address对象
     address = storage.StorageTableMeta.create_address(storage_engine=engine, address_dict=address_dict)
 
     in_serialized = request_data.get("in_serialized", 1 if engine in {storage.StorageEngine.STANDALONE, storage.StorageEngine.EGGROLL} else 0)
@@ -69,7 +70,7 @@ def table_add():
                                      hava_head=request_data.get("head"), id_delimiter=request_data.get("id_delimiter"), in_serialized=in_serialized)
     return get_json_result(data={"table_name": name, "namespace": namespace})
 
-
+# http接口
 #删除table
 @manager.route('/delete', methods=['post'])
 def table_delete():
@@ -88,7 +89,8 @@ def table_delete():
         return get_json_result(data=data)
     return get_json_result(retcode=101, retmsg='no find table')
 
-#获取table列表
+# http接口
+#获取job中所有组件的输入table和输出table信息
 @manager.route('/list', methods=['post'])
 def get_job_table_list():
     # 调用fate_flow.utils.detect_utils模块的check_config方法检查参数
@@ -102,7 +104,8 @@ def get_job_table_list():
     else:
         return get_json_result(retcode=101, retmsg='no find job')
 
-#获取table信息
+# http接口
+#根据table_name和namespace获取table信息
 @manager.route('/<table_func>', methods=['post'])
 def table_api(table_func):
     config = request.json
@@ -132,7 +135,8 @@ def table_api(table_func):
         return get_json_result()
 
 
-#获取job中的所有table，被get_job_table_list（获取table列表）方法调用
+
+#获取job中的所有table，被get_job_table_list方法调用
 def get_job_all_table(job):
     #将job的dsl、runtime_conf、train_runtime_conf作为参数，调用fate_flow.utils.schedule_utils模块的get_job_dsl_parser方法得到dsl_parser对象
     dsl_parser = schedule_utils.get_job_dsl_parser(dsl=job.f_dsl,

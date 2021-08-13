@@ -44,7 +44,9 @@ def internal_server_error(e):
     return get_json_result(retcode=100, retmsg=str(e))
 
 
-# 获取指定job的data_view
+# http接口
+# 获取指定job的数据视图
+# 参数：job_id、role、party_id
 @manager.route('/job/data_view', methods=['post'])
 def job_view():
     request_data = request.json
@@ -73,7 +75,9 @@ def job_view():
     else:
         return get_json_result(retcode=101, retmsg='error')
 
-#获取job中指定component的所有metric的数据
+# http接口
+# 获取job中指定component的所有metric的data、meta（一般用于evaluation组件）
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/metric/all', methods=['post'])
 def component_metric_all():
     request_data = request.json
@@ -100,7 +104,9 @@ def component_metric_all():
     else:
         return get_json_result(retcode=0, retmsg='no data', data={})
 
-#获取job中指定component的所有metric
+# http接口
+# 获取job中指定component的metric列表
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/metrics', methods=['post'])
 def component_metrics():
     request_data = request.json
@@ -116,8 +122,9 @@ def component_metrics():
     else:
         return get_json_result(retcode=0, retmsg='no data', data={})
 
-
-#获取job中指定component的指定metric的数据
+# http接口
+# 获取job中指定component的指定metric的data、meta
+# 参数：job_id、role、party_id、component_name、metric_namespace、metric_name
 @manager.route('/component/metric_data', methods=['post'])
 def component_metric_data():
     request_data = request.json
@@ -135,6 +142,7 @@ def component_metric_data():
     else:
         return get_json_result(retcode=0, retmsg='no data', data=[], meta={})
 
+
 #获取metric_data和metric_meta，被component_metric_all方法、component_metric_data方法调用
 def get_metric_all_data(tracker, metric_namespace, metric_name):
     #以metric_namespace和metric_name为参数，通过tracker对象分别调用get_metric_data和get_metric_meta方法获取metric_data和metric_meta
@@ -149,14 +157,20 @@ def get_metric_all_data(tracker, metric_namespace, metric_name):
     else:
         return [], {}
 
+
+# http接口
 #删除指定job的metric数据
+# 参数：job_id
 @manager.route('/component/metric/delete', methods=['post'])
 def component_metric_delete():
     #调用fate_flow.manager.data_manager模块的delete_metric_data方法执行删除操作
     sql = delete_metric_data(request.json)
     return get_json_result(retcode=0, retmsg='success', data=sql)
 
+
+# http接口
 #获取job中指定component的parameters
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/parameters', methods=['post'])
 def component_parameters():
     request_data = request.json
@@ -168,7 +182,7 @@ def component_parameters():
         #以component_name为参数，通过job_dsl_parser对象调用get_component_info方法得到对应component
         component = job_dsl_parser.get_component_info(request_data['component_name'])
 
-        #通过component调用get_role_parameters方法得到参数parameters
+        #通过component调用get_role_parameters方法得到parameters
         parameters = component.get_role_parameters()
 
         #循环遍历parameters，将结果放入output_parameters
@@ -188,7 +202,10 @@ def component_parameters():
     else:
         return get_json_result(retcode=101, retmsg='can not found this job')
 
+
+# http接口
 #获取job中指定component的输出模型
+# job_id、role、party_id、component_name
 @manager.route('/component/output/model', methods=['post'])
 def component_output_model():
     request_data = request.json
@@ -247,7 +264,10 @@ def component_output_model():
     else:
         return get_json_result(retcode=0, retmsg='no data', data={})
 
+
+# http接口
 #获取job的指定component的输出data
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/output/data', methods=['post'])
 def component_output_data():
     request_data = request.json
@@ -292,7 +312,10 @@ def component_output_data():
     return get_json_result(retcode=0, retmsg='success', data=output_data_list, meta={'header': headers, 'total': totals, 'names':data_names})
 
 
+
+# http接口
 #下载job的指定component的data
+#job_id、role、party_id、component_name、limit
 @manager.route('/component/output/data/download', methods=['get'])
 def component_output_data_download():
     request_data = request.json
@@ -369,7 +392,10 @@ def component_output_data_download():
                                                                     request_data['role'], request_data['party_id'])
         return send_file(memory_file, attachment_filename=tar_file_name, as_attachment=True)
 
-#获取job的指定component的data table
+
+# http接口
+#获取job的指定component的输出数据的table信息
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/output/data/table', methods=['post'])
 def component_output_data_table():
     request_data = request.json
@@ -386,7 +412,9 @@ def component_output_data_table():
         return get_json_result(retcode=100, retmsg='No found job')
 
 
+# http接口
 #下载job中指定component的summary
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/summary/download', methods=['POST'])
 def get_component_summary():
     request_data = request.json
@@ -413,7 +441,10 @@ def get_component_summary():
         stat_logger.exception(e)
         return error_response(210, str(e))
 
-#获取job的组件列表
+
+# http接口
+# 获取job的组件列表
+# 参数：job_id、role、party_id、component_name
 @manager.route('/component/list', methods=['POST'])
 def component_list():
     request_data = request.json
@@ -425,7 +456,7 @@ def component_list():
     else:
         return get_json_result(retcode=100, retmsg='No job matched, please make sure the job id is valid.')
 
-#获取job中的组件输出表元数据
+#获取job中的组件输出表元数据，被component_output_data和component_output_data_download方法调用
 def get_component_output_tables_meta(task_data):
     check_request_parameters(task_data)#检查参数
     #以job_id、component_name、role、party_id为参数，生成fate_flow.operation.job_tracker模块的Tracker类的对象tracker
@@ -443,7 +474,7 @@ def get_component_output_tables_meta(task_data):
     output_tables_meta = tracker.get_output_data_table(output_data_infos=output_data_table_infos)
     return output_tables_meta#返回结果
 
-#获取组件输出data_line
+#获取组件输出data_line，被component_output_data和component_output_data_download方法调用
 def get_component_output_data_line(src_key, src_value):
     have_data_label = False
     have_weight = False
@@ -468,7 +499,7 @@ def get_component_output_data_line(src_key, src_value):
         data_line.extend(data_utils.dataset_to_list(src_value))
     return data_line, have_data_label, is_str, have_weight
 
-#获取组件输出data_schema
+#获取组件输出data_schema，被component_output_data和component_output_data_download方法调用
 def get_component_output_data_schema(output_table_meta, have_data_label, is_str=False, have_weight=False):
     # get schema
     #通过output_table_meta对象调用get_schema方法得到schema

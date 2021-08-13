@@ -52,7 +52,7 @@ def rerun_job(job_id, role, party_id):
     return get_json_result(retcode=0, retmsg='success')
 
 
-# 由其他参与方调用，向发起者（本方）报告task
+# 报告task更新
 # 被调用：
 # fate_flow.scheduler.federated_scheduler.FederatedScheduler的report_task_to_initiator方法
 @manager.route('/<job_id>/<component_name>/<task_id>/<task_version>/<role>/<party_id>/report', methods=['POST'])
