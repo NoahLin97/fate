@@ -186,7 +186,7 @@ def save_model_info(model_info):
     except Exception as e:
         raise Exception("Create {} failed:\n{}".format(MLModel, e))
 
-
+# 比较版本的大小
 def compare_version(version: str, target_version: str):
     ver_list = version.split('.')
     tar_ver_list = target_version.split('.')

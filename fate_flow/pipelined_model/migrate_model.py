@@ -32,6 +32,8 @@ def gen_model_file_path(model_id, model_version):
     return os.path.join(get_project_base_directory(), "model_local_cache", model_id, model_version)
 
 # 比较请求时的角色和运行时的角色是否一样
+# 被调：
+# 被fate_flow.apps.model_app.py里面的migrate_model_process函数调用
 def compare_roles(request_conf_roles: dict, run_time_conf_roles: dict):
     if request_conf_roles.keys() == run_time_conf_roles.keys():
         varify_format = True
@@ -69,6 +71,8 @@ def import_from_db(config: dict):
         os.rename(model_path, model_path + '_backup_{}'.format(datetime.now().strftime('%Y%m%d%H%M')))
 
 # 迁移模型
+# 被调：
+# 被fate_flow.apps.model_app.py里面的do_migrate_model函数所调用
 def migration(config_data: dict):
     try:
         # 从fate_flow.utils导入model_utils模块中的gen_party_model_id函数

@@ -16,6 +16,9 @@
 import abc
 
 # 定义模型存储基类
+# 被调：
+# 被fate_flow.pipelined_model.mysql_model_storage.py里面的MysqlModelStorage类继承
+# 被fate_flow.pipelined_model.redis_model_storage.py里面的RedisModelStorage类继承
 class ModelStorageBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     # 定义存储函数，将本地缓存中的模型存储到可靠的系统中

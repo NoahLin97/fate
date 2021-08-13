@@ -23,7 +23,9 @@ from fate_flow.settings import stat_logger
 from fate_flow.utils import model_utils
 from fate_flow.pipelined_model import pipelined_model
 
-
+# 生成发布模型的具体信息
+# 被调：
+# 被fate_flow.apps.model_app.py中的load_model函数调用
 def generate_publish_model_info(config_data):
     model_id = config_data['job_parameters']['model_id']
     model_version = config_data['job_parameters']['model_version']
@@ -36,7 +38,9 @@ def generate_publish_model_info(config_data):
                 'model_version': model_version
             }
 
-
+# 载入模型
+# 被调：
+# 被fate_flow.apps.model_app.py中的do_load_model函数调用
 def load_model(config_data):
     stat_logger.info(config_data)
     if not config_data.get('servings'):
@@ -71,7 +75,8 @@ def load_model(config_data):
                 return response.statusCode, '{} {}'.format(response.message, response.error)
     return 0, 'success'
 
-
+# 绑定模型服务
+# 被fate_flow.apps.model_app.py中的bind_model_service函数调用
 def bind_model_service(config_data):
     service_id = config_data.get('service_id')
     initiator_role = config_data['initiator']['role']
@@ -101,7 +106,9 @@ def bind_model_service(config_data):
                 return response.statusCode, response.message
     return 0, None
 
-
+# 下载模型
+# 被调：
+# # 被fate_flow.apps.model_app.py中的transfer_model函数调用
 def download_model(request_data):
     model = pipelined_model.PipelinedModel(model_id=request_data.get("namespace"),
                                            model_version=request_data.get("name"))

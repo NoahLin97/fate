@@ -30,11 +30,15 @@ DB = PooledMySQLDatabase(None)
 SLICE_MAX_SIZE = 1024*1024*8
 
 # 使用mysql来存储模型
+# 被调：
+# 被fate_flow.components.model_operation_components.py调用
 class MysqlModelStorage(ModelStorageBase):
     def __init__(self):
         super(MysqlModelStorage, self).__init__()
 
-    # 重写store方法
+    # 重写store方法，将模型从本地缓存存储到mysql里
+    # 被调：
+    # 被fate_flow.components.model_operation_components.py里面的ModelStore.run函数调用
     def store(self, model_id: str, model_version: str, store_address: dict, force_update: bool = False):
         """
         Store the model from local cache to mysql
@@ -78,7 +82,9 @@ class MysqlModelStorage(ModelStorageBase):
             LOGGER.exception(e)
             raise Exception("Store model {} {} to mysql failed".format(model_id, model_version))
 
-    # 重写恢复方法
+    # 重写恢复方法，将模型数据从mysql中读取到本地缓存
+    # 被调：
+    # 被fate_flow.components.model_operation_components.py里面的ModelRestore.run函数调用
     def restore(self, model_id: str, model_version: str, store_address: dict):
         """
         Restore model from mysql to local cache

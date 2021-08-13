@@ -26,7 +26,10 @@ from fate_flow.utils.schedule_utils import get_dsl_parser_by_version
 
 # 部署模型
 # 被调：
-# fate_client
+# 被fate_client.pipeline.utils.invoker.job_submitter.py里面的model_deploy函数调用
+# 被fate_flow.apps.model_app.py里面的do_deploy函数调用
+# 被fate_test.fate_test._flow_client.py里面的flow_client函数调用
+# 被fate_test.fate_test.flow_test.flow_sdk_api.py里面的model_api函数调用
 def deploy(config_data):
     model_id = config_data.get('model_id')
     model_version = config_data.get('model_version')
@@ -105,6 +108,8 @@ def deploy(config_data):
                                                setting_conf_prefix=os.path.join(file_utils.get_python_base_directory(),
                                                                                 *['federatedml', 'conf', 'setting_conf']))
         pipeline.inference_dsl = json_dumps(inference_dsl, byte=True)
+        # 从fate_flow.utils.model_utils.py中调用compare_version函数
+        # 比较版本的大小
         if model_utils.compare_version(pipeline.fate_version, '1.5.0') == 'gt':
             pipeline.parent_info = json_dumps({'parent_model_id': model_id, 'parent_model_version': model_version}, byte=True)
             pipeline.parent = False

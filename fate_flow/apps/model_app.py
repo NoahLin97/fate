@@ -136,6 +136,7 @@ def load_model():
                            data=load_status_info)
 
 
+# 迁移模型进程的api接口
 @manager.route('/migrate', methods=['POST'])
 def migrate_model_process():
     request_config = request.json#获取参数，将参数放入变量request_config
@@ -211,7 +212,7 @@ def migrate_model_process():
     return get_json_result(job_id=_job_id, retcode=(0 if migrate_status else 101),
                            retmsg=migrate_status_msg, data=migrate_status_info)
 
-
+# 执行迁移模型的api接口
 @manager.route('/migrate/do', methods=['POST'])
 def do_migrate_model():
     request_data = request.json
@@ -711,6 +712,7 @@ def deploy():
         return get_json_result(retcode=(0 if deploy_status else 101),
                                retmsg=deploy_status_msg, data=deploy_status_info)
 
+# 部署的api接口
 @manager.route('/deploy/do', methods=['POST'])
 def do_deploy():
     retcode, retmsg = deploy_model.deploy(request.json)

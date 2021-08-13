@@ -26,6 +26,22 @@ from fate_arch.protobuf.python import default_empty_fill_pb2
 from fate_flow.settings import stat_logger, TEMP_DIRECTORY
 
 # 定义一个管道模型
+# 被调：
+# 被fate_flow.apps.model_app.py里面的operate_model函数调用
+# 被fate_flow.apps.model_app.py里面的get_predict_conf函数调用
+# 被fate_flow.operation.job_tracker.py里面的__init__函数调用
+# 被fate_flow.pipelined_model.deploy_model.py里面的deploy函数调用
+# 被fate_flow.pipelined_model.migrate_model.py里面的import_from_files函数调用
+# 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
+# 被fate_flow.pipelined_model.mysql_model_storage.py里面的store函数调用
+# 被fate_flow.pipelined_model.mysql_model_storage.py里面的restore函数调用
+# 被fate_flow.pipelined_model.publish_model.py里面的download_model函数调用
+# 被fate_flow.pipelined_model.redis_model_storage.py里面的store函数调用
+# 被fate_flow.pipelined_model.redis_model_storage.py里面的restore函数调用
+# 被fate_flow.utils.model_utils.py里面的query_model_info_from_file函数调用
+# 被fate_flow.utils.model_utils.py里面的gather_model_info_data函数调用
+# 被fate_flow.utils.model_utils.py里面的check_before_deploy函数调用
+# 被fate_flow.utils.model_utils.py里面的check_if_deployed函数调用
 class PipelinedModel(object):
     def __init__(self, model_id, model_version):
         """
@@ -43,6 +59,8 @@ class PipelinedModel(object):
         self.variables_data_path = os.path.join(self.model_path, "variables", "data")
         self.default_archive_format = "zip"
 
+    # 在本地缓存生成管道模型
+    # 被fate_flow.operation.job_tracker.py里面的init_pipelined_model函数调用
     def create_pipelined_model(self):
         if os.path.exists(self.model_path):
             raise Exception("Model creation failed because it has already been created, model cache path is {}".format(
@@ -56,6 +74,10 @@ class PipelinedModel(object):
         with open(self.define_meta_path, "w", encoding="utf-8") as fw:
             yaml.dump({"describe": "This is the model definition meta"}, fw, Dumper=yaml.RoundTripDumper)
 
+    # 在保存组件模型
+    # 被调：
+    # 被fate_flow.operation.job_tracker.py里面的save_output_model函数调用
+    # 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
     def save_component_model(self, component_name, component_module_name, model_alias, model_buffers):
         model_proto_index = {}
         component_model_storage_path = os.path.join(self.variables_data_path, component_name, model_alias)
@@ -78,6 +100,16 @@ class PipelinedModel(object):
         stat_logger.info("Save {} {} successfully".format(component_name, model_alias))
 
     # 读取组件模型
+    # 被调：
+    # 被fate_flow.apps.model_app.py里面的operate_model函数调用
+    # 被fate_flow.apps.model_app.py里面的get_predict_conf函数调用
+    # 被fate_flow.operation.job_tracker.py里面的get_output_model函数调用
+    # 被fate_flow.operation.job_tracker.py里面的save_machine_learning_model_info函数调用
+    # 被fate_flow.pipelined_model.deploy_model.py里面的deploy函数调用
+    # 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
+    # 被fate_flow.utils.model_utils.py里面的gather_model_info_data函数调用
+    # 被fate_flow.utils.model_utils.py里面的check_before_deploy函数调用
+    # 被fate_flow.utils.model_utils.py里面的check_if_deployed函数调用
     def read_component_model(self, component_name, model_alias):
         component_model_storage_path = os.path.join(self.variables_data_path, component_name, model_alias)
         model_proto_index = self.get_model_proto_index(component_name=component_name,
@@ -91,6 +123,11 @@ class PipelinedModel(object):
         return model_buffers
 
     # 收集模型，返回模型数据
+    # 被调：
+    # 被fate_flow.operation.job_tracker.py里面的collect_model函数调用
+    # 被fate_flow.pipelined_model.publish_model.py里面的download_model函数调用
+    # 被fate_flow.pipelined_model.deploy_model.py里面的deploy函数调用
+    # 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
     def collect_models(self, in_bytes=False, b64encode=True):
         model_buffers = {}
         # 打开文件
@@ -111,13 +148,26 @@ class PipelinedModel(object):
                                 model_buffers["{}.{}:{}".format(component_name, model_alias, model_name)] = buffer_object_serialized_string
         return model_buffers
 
+    # 设置模型的路径
     def set_model_path(self):
         self.model_path = os.path.join(file_utils.get_project_base_directory(), "model_local_cache",
                                        self.model_id, self.model_version)
 
+    # 判断该路径下的文件是否存在
+    # 被调：
+    # 被fate_flow.apps.model_app.py里面的operate_model函数调用
+    # 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的packaging_model函数调用
+    # 被fate_flow.utils.model_utils.py里面的gather_model_info_data函数调用
+    # 被fate_flow.utils.model_utils.py里面的check_if_deployed函数调用
     def exists(self):
         return os.path.exists(self.model_path)
 
+    # 保存模型文件
+    # 被调：
+    # 被fate_flow.operation.job_tracker.py里面的save_pipelined_model函数调用
+    # 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
+    # 被fate_flow.pipelined_model.deploy_model.py里面的deploy函数调用
     def save_pipeline(self, pipelined_buffer_object):
         buffer_object_serialized_string = pipelined_buffer_object.SerializeToString()
         if not buffer_object_serialized_string:
@@ -127,6 +177,12 @@ class PipelinedModel(object):
         with open(os.path.join(self.model_path, "pipeline.pb"), "wb") as fw:
             fw.write(buffer_object_serialized_string)
 
+    # 打包模型
+    # 被调：
+    # 被fate_flow.pipelined_model.migrate_model.py里面的migration函数调用
+    # 被fate_flow.apps.model_app.py里面的operate_model函数调用
+    # 被fate_flow.pipelined_model.mysql_model_storage.py里面的store函数调用
+    # 被fate_flow.pipelined_model.redis_model_storage.py里面的store函数调用
     def packaging_model(self):
         if not self.exists():
             raise Exception("Can not found {} {} model local cache".format(self.model_id, self.model_version))
@@ -137,12 +193,21 @@ class PipelinedModel(object):
         return archive_file_path
 
     # 拆解模型
+    # 被调：
+    # 被fate_flow.apps.model_app.py里面的operate_model函数调用
+    # 被fate_flow.pipelined_model.mysql_model_storage.py里面的store函数调用
+    # 被fate_flow.pipelined_model.redis_model_storage.py里面的store函数调用
+    # 被fate_flow.pipelined_model.migrate_model.py里面的import_from_files函数调用
     def unpack_model(self, archive_file_path: str):
         if os.path.exists(self.model_path):
             raise Exception("Model {} {} local cache already existed".format(self.model_id, self.model_version))
         shutil.unpack_archive(archive_file_path, self.model_path)
         stat_logger.info("Unpack model archive to {}".format(self.model_path))
 
+
+    # 更新组件元数据到yaml中
+    # 被调：
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的save_component_model函数调用
     def update_component_meta(self, component_name, component_module_name, model_alias, model_proto_index):
         """
         update meta info yaml
@@ -165,11 +230,18 @@ class PipelinedModel(object):
             define_index["model_proto"][component_name][model_alias].update(model_proto_index)
             yaml.dump(define_index, fw, Dumper=yaml.RoundTripDumper)
 
+
+    # 获取模型原型索引
+    # 被调：
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的read_component_model函数调用
     def get_model_proto_index(self, component_name, model_alias):
         with open(self.define_meta_path, "r", encoding="utf-8") as fr:
             define_index = yaml.safe_load(fr)
             return define_index.get("model_proto", {}).get(component_name, {}).get(model_alias, {})
 
+    # 获取组件定义
+    # 被调:
+    # 被fate_flow.operation.job_tracker.py里面的get_component_define函数调用
     def get_component_define(self, component_name=None):
         with open(self.define_meta_path, "r", encoding="utf-8") as fr:
             define_index = yaml.safe_load(fr)
@@ -178,6 +250,10 @@ class PipelinedModel(object):
             else:
                 return define_index.get("component_define", {})
 
+    # 解析原型
+    # 被调：
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的read_component_model函数调用
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的collect_models函数调用
     def parse_proto_object(self, buffer_name, buffer_object_serialized_string):
         try:
             buffer_object = self.get_proto_buffer_class(buffer_name)()
@@ -199,6 +275,10 @@ class PipelinedModel(object):
                 stat_logger.exception(e2)
                 raise e1
 
+
+    # 获取原型缓冲区里的类
+    # 被调：
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的parse_proto_object函数调用
     @classmethod
     def get_proto_buffer_class(cls, buffer_name):
         package_path = os.path.join(file_utils.get_python_base_directory(), 'federatedml', 'protobuf', 'generated')
@@ -216,12 +296,26 @@ class PipelinedModel(object):
         else:
             return None
 
+    # 获取模型基础路径
+    # 被调：
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的packaging_model函数调用
+    # 被fate_flow.pipelined_model.pipelined_model.py里面的archive_model_file_path函数调用
     def archive_model_base_path(self):
         return os.path.join(TEMP_DIRECTORY, "{}_{}".format(self.model_id, self.model_version))
 
+    # 获取模型文件路径
+    # 被调：
+    # 被fate_flow.pipelined_model.mysql_model_storage.py里面的restore函数调用
+    # 被fate_flow.pipelined_model.redis_model_storage.py里面的restore函数调用
     def archive_model_file_path(self):
         return "{}.{}".format(self.archive_model_base_path(), self.default_archive_format)
 
+    # 计算模型文件大小
+    # 被调：
+    # 被fate_flow.apps.model_app.py里面的operate_model函数调用
+    # 被fate_flow.operation.job_tracker.py里面的get_model_size函数调用
+    # 被fate_flow.pipelined_model.deploy_model.py里面的deploy函数调用
+    # 被fate_flow.utils.model_utils.py里面的query_model_info_from_file函数调用
     def calculate_model_file_size(self):
         size = 0
         for root, dirs, files in os.walk(self.model_path):

@@ -413,6 +413,10 @@ class JobInvoker(object):
         except:
             raise ValueError("Cannot get output model, err msg: ")
 
+    # 模型部署
+    # 被调：
+    # 被fate_client.pipeline.backend.pipeline.py里面的predict函数调用
+    # 被fate_client.pipeline.backend.pipeline.py里面的deploy_component函数调用
     def model_deploy(self, model_id, model_version, cpn_list=None, predict_dsl=None):
         if cpn_list:
             result = self.client.model.deploy(model_id=model_id, model_version=model_version, cpn_list=cpn_list)
