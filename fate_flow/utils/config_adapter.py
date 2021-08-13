@@ -18,7 +18,7 @@
 #
 from fate_flow.entity.types import RunParameters
 
-
+# 定义JobRuntimeConfigAdapter类
 class JobRuntimeConfigAdapter(object):
     def __init__(self, job_runtime_conf):
         self.job_runtime_conf = job_runtime_conf
@@ -70,6 +70,7 @@ class JobRuntimeConfigAdapter(object):
             job_type = self.job_runtime_conf['job_parameters'].get('job_type', 'train')
         return job_type
 
+    # 更新对应模型id的版本
     def update_model_id_version(self, model_id=None, model_version=None):
         if int(self.job_runtime_conf.get('dsl_version', 1)) == 2:
             if model_id:

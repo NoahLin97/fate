@@ -136,6 +136,7 @@ class BaseDSLParser(object):
     def _check_component_valid_names(self):
         raise NotImplementedError
 
+    # 寻找dsl的依赖关系
     def _find_dependencies(self, mode="train", version=1):
         self.component_downstream = [[] for i in range(len(self.components))]
         self.component_upstream = [[] for i in range(len(self.components))]
@@ -758,7 +759,7 @@ class BaseDSLParser(object):
     def generate_predict_conf_template(train_dsl, train_conf, model_id, model_version):
         raise NotImplementedError
 
-
+#
 class DSLParser(BaseDSLParser):
     def _check_component_valid_names(self):
         occur_times = {}
@@ -808,6 +809,7 @@ class DSLParser(BaseDSLParser):
         return json_dict
 
     @staticmethod
+    # 验证dsl的依赖关系
     def verify_dsl(dsl, mode="train"):
         dsl_parser = DSLParser()
         dsl_parser.dsl = dsl
@@ -886,11 +888,13 @@ class DSLParser(BaseDSLParser):
 
         return need_deploy
 
+    # 得到预测的dsl
     def get_predict_dsl(self, role, predict_dsl=None, setting_conf_prefix=None):
         if predict_dsl is not None:
             return predict_dsl
         return self.gen_predict_dsl_by_role(role)
 
+    # 通过角色生成预测dsl
     def gen_predict_dsl_by_role(self, role):
         if not self.predict_dsl:
             return self.predict_dsl

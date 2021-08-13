@@ -21,6 +21,7 @@ class MetricType(Enum):
 
 
 class Metric(object):
+    # 初始化函数init使用键值对以及时间戳来初始化Metric类
     def __init__(self, key, value: float, timestamp: float = None):
         self.key = key
         self.value = value
@@ -28,7 +29,7 @@ class Metric(object):
 
 
 class MetricMeta(object):
-    # 初始化函数\__init__使用键值对以及时间戳来初始化Metric类
+    # 初始化函数init使用name、metric_type、extra_metas来初始化MetricMeta类
     def __init__(self, name: str, metric_type: MetricType, extra_metas: dict = None):
         self.name = name
         self.metric_type = metric_type

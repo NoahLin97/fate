@@ -15,7 +15,7 @@
 #
 import typing
 
-
+# 检查cofig是否正确
 def check_config(config: typing.Dict, required_arguments: typing.List):
     no_arguments = []
     error_arguments = []

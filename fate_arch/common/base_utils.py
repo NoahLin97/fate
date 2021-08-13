@@ -65,7 +65,7 @@ def json_dumps(src, byte=False, indent=None):
     else:
         return json.dumps(src, indent=indent, cls=CustomJSONEncoder)
 
-
+# 载入json
 def json_loads(src, object_pairs_hook=None):
     if isinstance(src, bytes):
         return json.loads(bytes_to_string(src), object_pairs_hook=object_pairs_hook)
@@ -73,6 +73,7 @@ def json_loads(src, object_pairs_hook=None):
         return json.loads(src, object_pairs_hook=object_pairs_hook)
 
 
+# current_timestamp方法返回当前时间戳
 def current_timestamp():
     return int(time.time() * 1000)
 

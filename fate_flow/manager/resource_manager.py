@@ -34,11 +34,13 @@ class ResourceManager(object):
     # 初始化资源管理类
     def initialize(cls):
         # eggroll和spark
-        # 从fate_flow.settings调用SUPPORT_BACKENDS_ENTRANCE模块，获得所用到支持的引擎
+        # 从fate_flow.settings调用SUPPORT_BACKENDS_ENTRANCE模块
+        # 获得所用到支持的引擎
         for backend_name, backend_engines in SUPPORT_BACKENDS_ENTRANCE.items():
             for engine_type, engine_keys_list in backend_engines.items():
                 for engine_keys in engine_keys_list:
-                    # 从fate_arch.common.conf_utils中调用get_base_config方法，获得基础的config配置
+                    # 从fate_arch.common.conf_utils中调用get_base_config方法
+                    # 获得基础的config配置
                     engine_config = get_base_config(backend_name, {}).get(engine_keys[1], {})
                     if engine_config:
                         # 如果引擎的config存在就注册该引擎
@@ -60,11 +62,14 @@ class ResourceManager(object):
     # 引擎的注册
     def register_engine(cls, engine_type, engine_name, engine_entrance, engine_config):
         nodes = engine_config.get("nodes", 1)
-        # 从fate_flow.settings调用TOTAL_CORES_OVERWEIGHT_PERCENT，全部核所占的百分比，默认为1，表示不超载
+        # 从fate_flow.settings调用TOTAL_CORES_OVERWEIGHT_PERCENT
+        # 全部核所占的百分比，默认为1，表示不超载
         cores = engine_config.get("cores_per_node", 0) * nodes * TOTAL_CORES_OVERWEIGHT_PERCENT
-        # 从fate_flow.settings调用TOTAL_MEMORY_OVERWEIGHT_PERCENT，全部内存所占的百分比，默认为1，表示不超载
+        # 从fate_flow.settings调用TOTAL_MEMORY_OVERWEIGHT_PERCENT
+        # 全部内存所占的百分比，默认为1，表示不超载
         memory = engine_config.get("memory_per_node", 0) * nodes * TOTAL_MEMORY_OVERWEIGHT_PERCENT
-        # 从fate_flow.db.db_models中调用EngineRegistry模块，作为数据库搜索的判断条件
+        # 从fate_flow.db.db_models中调用EngineRegistry模块
+        # 作为数据库搜索的判断条件
         filters = [EngineRegistry.f_engine_type == engine_type, EngineRegistry.f_engine_name == engine_name]
         resources = EngineRegistry.select().where(*filters)
         if resources:
@@ -82,13 +87,15 @@ class ResourceManager(object):
             operate = EngineRegistry.update(update_fields).where(*filters)
             update_status = operate.execute() > 0
             if update_status:
-                # 从fate_flow.settings中调用stat_logger模块，记录sql语句日志
+                # 从fate_flow.settings中调用stat_logger模块
+                # 记录sql语句日志
                 stat_logger.info(f"update {engine_type} engine {engine_name} {engine_entrance} registration information")
             else:
                 stat_logger.info(f"update {engine_type} engine {engine_name} {engine_entrance} registration information takes no effect")
         else:
             resource = EngineRegistry()
-            # 调用fate_arch.common中的base_utils，current_timestamp方法返回当前时间戳
+            # 调用fate_arch.common中的base_utils
+            # current_timestamp方法返回当前时间戳
             resource.f_create_time = base_utils.current_timestamp()
             resource.f_engine_type = engine_type
             resource.f_engine_name = engine_name
@@ -111,7 +118,8 @@ class ResourceManager(object):
     def check_resource_apply(cls, job_parameters: RunParameters, role, party_id, engines_info):
         # 计算job所需资源
         computing_engine, cores, memory = cls.calculate_job_resource(job_parameters=job_parameters, role=role, party_id=party_id)
-        # 从fate_flow.settings调用MAX_CORES_PERCENT_PER_JOB，每个job可以使用的最大核百分比
+        # 从fate_flow.settings调用MAX_CORES_PERCENT_PER_JOB
+        # 每个job可以使用的最大核百分比
         max_cores_per_job = math.floor(engines_info[EngineType.COMPUTING].f_cores * MAX_CORES_PERCENT_PER_JOB)
         if cores > max_cores_per_job:
             return False, cores, max_cores_per_job
@@ -139,7 +147,8 @@ class ResourceManager(object):
         try:
             with DB.atomic():
                 updates = {
-                    # 从fate_flow.db.db_models调用Job模块，进行数据库写入
+                    # 从fate_flow.db.db_models调用Job模块
+                    # 进行数据库写入
                     Job.f_engine_type: EngineType.COMPUTING,
                     Job.f_engine_name: engine_name,
                     Job.f_cores: cores,
@@ -246,7 +255,8 @@ class ResourceManager(object):
     # 计算job所需资源
     def calculate_job_resource(cls, job_parameters: RunParameters = None, job_id=None, role=None, party_id=None):
         if not job_parameters:
-            # 从fate_flow.utils导入job_utils模块，get_job_parameters方法得到job的参数
+            # 从fate_flow.utils导入job_utils模块
+            # get_job_parameters方法得到job的参数
             job_parameters = job_utils.get_job_parameters(job_id=job_id,
                                                           role=role,
                                                           party_id=party_id)
@@ -265,7 +275,8 @@ class ResourceManager(object):
     # 计算task所需资源
     def calculate_task_resource(cls, task_parameters: RunParameters = None, task_info: dict = None):
         if not task_parameters:
-            # 从fate_flow.utils导入job_utils模块，get_job_parameters方法得到job的参数
+            # 从fate_flow.utils导入job_utils模块
+            # get_job_parameters方法得到job的参数
             job_parameters = job_utils.get_job_parameters(job_id=task_info["job_id"],
                                                           role=task_info["role"],
                                                           party_id=task_info["party_id"])

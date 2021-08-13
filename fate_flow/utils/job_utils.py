@@ -215,6 +215,7 @@ def get_model_configuration(job_id, role, party_id):
 
 
 @DB.connection_context()
+# get_job_parameters方法得到job的参数
 def get_job_parameters(job_id, role, party_id):
     jobs = Job.select(Job.f_runtime_conf_on_party).where(Job.f_job_id == job_id,
                                                          Job.f_role == role,

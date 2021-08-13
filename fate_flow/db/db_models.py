@@ -52,10 +52,16 @@ def singleton(cls, *args, **kw):
 class BaseDataBase(object):
     # 定义初始化函数
     def __init__(self):
+        # 从fate_flow.settings调用DATABASE
+        # copy返回一个字典的浅复制，浅拷贝会随着原值的修改而修改
         database_config = DATABASE.copy()
         db_name = database_config.pop("name")
         if WORK_MODE == WorkMode.STANDALONE:
+            # 从fate_arch.common导入file_utils模块中的get_project_base_directory()函数
+            # 获得项目基础路径
             self.database_connection = APSWDatabase(os.path.join(file_utils.get_project_base_directory(), 'fate_flow_sqlite.db'))
+            # 从fate_flow.entity.runtime_config导入RuntimeConfig中的init_config函数
+            # 初始化配置
             RuntimeConfig.init_config(USE_LOCAL_DATABASE=True)
             stat_logger.info('init sqlite database on standalone mode successfully')
         elif WORK_MODE == WorkMode.CLUSTER:
@@ -99,7 +105,7 @@ def init_database_tables():
             table_objs.append(obj)
     DB.create_tables(table_objs)
 
-# 为数据库模型添加属性及其值
+# 为数据库模型添加属性及对应的值
 def fill_db_model_object(model_object, human_model_dict):
     for k, v in human_model_dict.items():
         attr_name = 'f_%s' % k
@@ -155,6 +161,7 @@ class Job(DataBaseModel):
 
     class Meta:
         db_table = "t_job"
+        # 设置主键
         primary_key = CompositeKey('f_job_id', 'f_role', 'f_party_id')
 
 # 定义与数据库相关的Task类
@@ -186,6 +193,7 @@ class Task(DataBaseModel):
 
     class Meta:
         db_table = "t_task"
+        # 设置主键
         primary_key = CompositeKey('f_job_id', 'f_task_id', 'f_task_version', 'f_role', 'f_party_id')
 
 # 追踪指标
@@ -193,6 +201,7 @@ class TrackingMetric(DataBaseModel):
     _mapper = {}
 
     @classmethod
+    # 初始化模型
     def model(cls, table_index=None, date=None):
         if not table_index:
             table_index = date.strftime(
@@ -229,6 +238,7 @@ class TrackingOutputDataInfo(DataBaseModel):
     _mapper = {}
 
     @classmethod
+    # 初始化模型
     def model(cls, table_index=None, date=None):
         if not table_index:
             table_index = date.strftime(
@@ -313,6 +323,7 @@ class ComponentSummary(DataBaseModel):
     _mapper = {}
 
     @classmethod
+    # 初始化模型
     def model(cls, table_index=None, date=None):
         if not table_index:
             table_index = date.strftime(
@@ -353,6 +364,7 @@ class ModelOperationLog(DataBaseModel):
         db_table = "t_model_operation_log"
 
 # 定义引擎注册相关信息
+# 作为数据库搜索的判断条件
 class EngineRegistry(DataBaseModel):
     f_engine_type = CharField(max_length=10, index=True)
     f_engine_name = CharField(max_length=50, index=True)

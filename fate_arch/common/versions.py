@@ -22,7 +22,10 @@ from fate_arch.common.file_utils import get_project_base_directory
 
 
 def get_versions() -> typing.Mapping[str, typing.Any]:
+    # Dotenv 是一个零依赖的模块，它能将环境变量中的变量从 .env 文件加载到 process.env 中。
     return dotenv.dotenv_values(
+        # get_versions()方法从fate_arch.common.file_utils中调用get_project_base_directory()方法
+        # 获取项目的基础路径
         dotenv_path=os.path.join(get_project_base_directory(), "fate.env")
     )
 

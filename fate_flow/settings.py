@@ -56,11 +56,14 @@ FATE_SERVICES_REGISTERED_PATH = {
 }
 
 # Resource
+# 全部核所占的百分比，默认为1，表示不超载
 TOTAL_CORES_OVERWEIGHT_PERCENT = 1  # 1 means no overweight
+# 全部内存所占的百分比，默认为1，表示不超载
 TOTAL_MEMORY_OVERWEIGHT_PERCENT = 1  # 1 means no overweight
 DEFAULT_TASK_PARALLELISM = 1
 DEFAULT_TASK_CORES = 4
 DEFAULT_TASK_MEMORY = 0  # mb
+# 每个job可以使用的最大核百分比
 MAX_CORES_PERCENT_PER_JOB = 1  # 1 means total
 STANDALONE_BACKEND_VIRTUAL_CORES_PER_NODE = 20
 IGNORE_RESOURCE_ROLES = {"arbiter"}
@@ -68,6 +71,7 @@ SUPPORT_IGNORE_RESOURCE_ENGINES = {
     ComputingEngine.EGGROLL, ComputingEngine.STANDALONE}
 
 # Storage engine is used for component output data
+# 获得所用到支持的引擎
 SUPPORT_BACKENDS_ENTRANCE = {
     "fate_on_eggroll": {
         EngineType.COMPUTING: [(ComputingEngine.EGGROLL, "clustermanager")],
@@ -101,7 +105,10 @@ log.LoggerFactory.LEVEL = 10
 # {CRITICAL: 50, FATAL:50, ERROR:40, WARNING:30, WARN:30, INFO:20, DEBUG:10, NOTSET:0}
 log.LoggerFactory.set_directory(os.path.join(
     file_utils.get_project_base_directory(), "logs", "fate_flow"))
+
+# 从fate_arch.common中调用getLogger函数
 stat_logger = log.getLogger("fate_flow_stat")
+
 detect_logger = log.getLogger("fate_flow_detect")
 access_logger = log.getLogger("fate_flow_access")
 data_manager_logger = log.getLogger("fate_flow_data_manager")

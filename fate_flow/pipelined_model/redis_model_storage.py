@@ -22,10 +22,16 @@ from fate_arch.common import log
 LOGGER = log.getLogger()
 
 
+# 使用redis来存储模型
+# 被调：
+# 被fate_flow.components.model_operation_components.py调用
 class RedisModelStorage(ModelStorageBase):
     def __init__(self):
         super(RedisModelStorage, self).__init__()
 
+    # 重写store方法，将模型从本地缓存存储到redis里
+    # 被调：
+    # 被fate_flow.components.model_operation_components.py里面的ModelStore.run函数调用
     def store(self, model_id: str, model_version: str, store_address: dict, force_update: bool = False):
         """
         Store the model from local cache to redis
@@ -52,6 +58,10 @@ class RedisModelStorage(ModelStorageBase):
             LOGGER.exception(e)
             raise Exception("Store model {} {} to redis failed".format(model_id, model_version))
 
+
+    # 重写恢复方法，将模型数据从mysql中读取到本地缓存
+    # 被调：
+    # 被fate_flow.components.model_operation_components.py里面的ModelRestore.run函数调用
     def restore(self, model_id: str, model_version: str, store_address: dict):
         """
         Restore model from redis to local cache
@@ -77,6 +87,7 @@ class RedisModelStorage(ModelStorageBase):
             LOGGER.exception(e)
             raise Exception("Restore model {} {} from redis failed".format(model_id, model_version))
 
+    # 与redis进行连接
     def get_connection(self, config: dict):
         red = redis.Redis(host=config.get("host", None),
                           port=int(config.get("port", 0)),
@@ -85,5 +96,6 @@ class RedisModelStorage(ModelStorageBase):
                           )
         return red
 
+    # 储存key
     def store_key(self, model_id: str, model_version: str):
         return ":".join(["FATEFlow", "PipelinedModel", model_id, model_version])

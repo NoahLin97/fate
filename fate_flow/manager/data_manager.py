@@ -44,7 +44,9 @@ def delete_tables_by_table_infos(output_data_table_infos):
         namespace = output_data_table_info.f_table_namespace
         table_info = {'table_name': table_name, 'namespace': namespace}
         if table_name and namespace and table_info not in data:
+            # 从fate_arch中调用storage模块的build函数
             with storage.Session.build(name=table_name, namespace=namespace) as storage_session:
+                # 从fate_arch中调用storage模块的get_table函数
                 table = storage_session.get_table()
                 try:
                     table.destroy()
@@ -69,6 +71,7 @@ def drop_metric_data_mode(model):
     try:
         drop_sql = 'drop table t_tracking_metric_{}'.format(model)
         DB.execute_sql(drop_sql)
+        # 从fate_flow.settings中调用stat_logger记录日志
         stat_logger.info(drop_sql)
         return drop_sql
     except Exception as e:
@@ -78,16 +81,19 @@ def drop_metric_data_mode(model):
 
 @DB.connection_context()
 # 从数据库中删除符合条件的数据，找到对应的job_id以及其他存在的属性
+# delete和drop的区别：delete只删除数据不删除表的结构，drop将删除表的结构
 def delete_metric_data_from_db(metric_info):
     try:
         job_id = metric_info['job_id']
         metric_info.pop('job_id')
         delete_sql = 'delete from t_tracking_metric_{}  where f_job_id="{}"'.format(job_id[:8], job_id)
         for k, v in metric_info.items():
+            # 从fate_flow.db.db_models中调用TrackingMetric
             if hasattr(TrackingMetric, "f_" + k):
                 connect_str = " and f_"
                 delete_sql = delete_sql + connect_str + k + '="{}"'.format(v)
         DB.execute_sql(delete_sql)
+        # 从fate_flow.settings中调用stat_logger记录日志
         stat_logger.info(delete_sql)
         return delete_sql
     except Exception as e:
