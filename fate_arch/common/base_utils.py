@@ -46,7 +46,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         else:
             return json.JSONEncoder.default(self, obj)
 
-
+# 使用uuid生成fate的id
 def fate_uuid():
     return uuid.uuid1().hex
 

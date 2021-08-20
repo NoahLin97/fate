@@ -19,8 +19,9 @@ from fate_arch.common import conf_utils
 from fate_flow.settings import CHECK_NODES_IDENTITY, FATE_MANAGER_NODE_CHECK_ENDPOINT
 from fate_flow.utils.service_utils import ServiceUtils
 
-
+# 检查节点
 def nodes_check(src_party_id, src_role, appKey, appSecret, dst_party_id):
+    # 检查节点身份，默认为false
     if CHECK_NODES_IDENTITY:
         body = {
             'srcPartyId': int(src_party_id),

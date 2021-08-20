@@ -33,13 +33,13 @@ class EngineType(object):
     STORAGE = "storage"
     FEDERATION = "federation"
 
-
+# 协调代理服务
 class CoordinationProxyService(object):
     ROLLSITE = "rollsite"
     NGINX = "nginx"
     FATEFLOW = "fateflow"
 
-
+# 协调通信协议
 class CoordinationCommunicationProtocol(object):
     HTTP = "http"
     GRPC = "grpc"

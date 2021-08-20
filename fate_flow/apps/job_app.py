@@ -37,7 +37,7 @@ from fate_flow.controller.job_controller import JobController
 
 manager = Flask(__name__)
 
-
+# 服务端内部错误异常
 @manager.errorhandler(500)
 def internal_server_error(e):
     return server_error_response(e)

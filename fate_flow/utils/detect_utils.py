@@ -16,7 +16,18 @@
 import typing
 
 # 检查cofig是否正确
+# 被调：
+# 被fate_client.flow_client.flow_cli.commands.privilege.py里面的query、grant、delete函数所调用
+# 被fate_flow.apps.data_access_app.py里面的download_upload函数所调用
+# 被fate_flow.apps.job_app.py里面的submit_job、get_url函数所调用
+# 被fate_flow.apps.model_app.py里面的migrate_model_process、bind_model_service、operate_model、deploy、get_predict_conf函数所调用
+# 被fate_flow.apps.tracking_app.py里面的component_output_data_table、get_component_summary函数所调用
+# 被fate_flow.fate_flow_client.py里面的call_fun函数所调用
+# 被fate_flow.manager.pipeline_manager.py里面的pipeline_dag_dependency函数所调用
+# 被fate_flow.scheduler.dag_scheduler.py里面的submit函数所调用
+# 被fate_flow.utils.job_utils.py里面的check_job_runtime_conf函数所调用
 def check_config(config: typing.Dict, required_arguments: typing.List):
+    # 检查config里面是否都存在required_arguments
     no_arguments = []
     error_arguments = []
     for require_argument in required_arguments:

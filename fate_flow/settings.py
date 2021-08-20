@@ -116,8 +116,11 @@ peewee_logger = log.getLogger("peewee")
 
 # Switch
 UPLOAD_DATA_FROM_CLIENT = True
+# 是否认证
 USE_AUTHENTICATION = False
+# 权限命令白名单
 PRIVILEGE_COMMAND_WHITELIST = []
+# 检查节点身份
 CHECK_NODES_IDENTITY = False
 DEFAULT_FEDERATED_STATUS_COLLECT_TYPE = get_base_config(
     FATEFLOW_SERVICE_NAME, {}).get("default_federated_status_collect_type", "PUSH")

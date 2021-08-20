@@ -37,7 +37,7 @@ def get_project_base_directory():
         )
     return PROJECT_BASE
 
-
+# 获取python基础路径
 def get_python_base_directory():
     return os.path.join(get_project_base_directory(), "python")
 

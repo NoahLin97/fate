@@ -17,7 +17,11 @@ import threading
 import time
 import random
 
-
+# cron：
+# 计划任务，是任务在约定的时间执行已经计划好的工作
+# 被调：
+# 被fate_flow.scheduler.dag_scheduler.py里面的DAGScheduler类所继承
+# 被fate_flow.scheduler.detector.py里面的Detector类所继承
 class Cron(threading.Thread):
     def __init__(self, interval, run_second=None, rand_size=None, title='', logger=None, lock=None):
         """
@@ -33,14 +37,22 @@ class Cron(threading.Thread):
         self.interval = interval
         self.run_second = run_second
         self.rand_size = rand_size
+        # 通过threading.Event()可以创建一个事件管理标志，该标志（event）默认为False，event对象主要有四种方法可以调用：
+        # event.wait(timeout=None)：调用该方法的线程会被阻塞，如果设置了timeout参数，超时后，线程会停止阻塞继续执行；
+        # event.set()：将event的标志设置为True，调用wait方法的所有线程将被唤醒；
+        # event.clear()：将event的标志设置为False，调用wait方法的所有线程将被阻塞；
+        # event.isSet()：判断event的标志是否为True。
         self.finished = threading.Event()
         self.title = title
         self.logger = logger
         self.lock = lock
 
+
+    # 取消
     def cancel(self):
         self.finished.set()
 
+    # 运行
     def run(self):
         def do():
             try:
@@ -81,6 +93,7 @@ class Cron(threading.Thread):
             else:
                 raise e
 
+    # 运行
     def run_do(self):
         pass
 

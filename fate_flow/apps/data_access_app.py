@@ -29,9 +29,10 @@ from fate_flow.operation.job_saver import JobSaver
 
 manager = Flask(__name__)
 
-
+# 服务器内部错误异常
 @manager.errorhandler(500)
 def internal_server_error(e):
+    # 记录日志
     stat_logger.exception(e)
     return get_json_result(retcode=100, retmsg=str(e))
 
