@@ -22,6 +22,8 @@ from fate_flow.utils.service_utils import ServiceUtils
 # 检查节点
 def nodes_check(src_party_id, src_role, appKey, appSecret, dst_party_id):
     # 检查节点身份，默认为false
+    # AppKey：公钥（相当于账号）
+    # AppSecret：私钥（相当于密码）
     if CHECK_NODES_IDENTITY:
         body = {
             'srcPartyId': int(src_party_id),
@@ -36,6 +38,7 @@ def nodes_check(src_party_id, src_role, appKey, appSecret, dst_party_id):
                 ServiceUtils.get_item("fatemanager", "host"),
                 ServiceUtils.get_item("fatemanager", "port"),
                 FATE_MANAGER_NODE_CHECK_ENDPOINT), json=body).json()
+            # FATE_MANAGER_NODE_CHECK_ENDPOINT = "/fate-manager/api/site/checksite"
             if response['code'] != 0:
                 raise Exception(str(response['msg']))
         except Exception as e:

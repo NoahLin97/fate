@@ -164,6 +164,59 @@ class Job(DataBaseModel):
         # 设置主键
         primary_key = CompositeKey('f_job_id', 'f_role', 'f_party_id')
 
+'''
+mysql> describe t_job;
++--------------------------+--------------+------+-----+---------+-------+
+| Field                    | Type         | Null | Key | Default | Extra |
++--------------------------+--------------+------+-----+---------+-------+
+| f_create_time            | bigint       | YES  |     | NULL    |       |
+| f_create_date            | datetime     | YES  |     | NULL    |       |
+| f_update_time            | bigint       | YES  |     | NULL    |       |
+| f_update_date            | datetime     | YES  |     | NULL    |       |
+| f_user_id                | varchar(25)  | YES  | MUL | NULL    |       |
+| f_job_id                 | varchar(25)  | NO   | PRI | NULL    |       |
+| f_name                   | varchar(500) | YES  |     | NULL    |       |
+| f_description            | text         | YES  |     | NULL    |       |
+| f_tag                    | varchar(50)  | YES  | MUL | NULL    |       |
+| f_dsl                    | longtext     | NO   |     | NULL    |       |
+| f_runtime_conf           | longtext     | NO   |     | NULL    |       |
+| f_runtime_conf_on_party  | longtext     | NO   |     | NULL    |       |
+| f_train_runtime_conf     | longtext     | YES  |     | NULL    |       |
+| f_roles                  | longtext     | NO   |     | NULL    |       |
+| f_work_mode              | int          | NO   |     | NULL    |       |
+| f_initiator_role         | varchar(50)  | NO   | MUL | NULL    |       |
+| f_initiator_party_id     | varchar(50)  | NO   | MUL | NULL    |       |
+| f_status                 | varchar(50)  | NO   | MUL | NULL    |       |
+| f_status_code            | int          | YES  | MUL | NULL    |       |
+| f_role                   | varchar(50)  | NO   | PRI | NULL    |       |
+| f_party_id               | varchar(10)  | NO   | PRI | NULL    |       |
+| f_is_initiator           | tinyint(1)   | YES  | MUL | NULL    |       |
+| f_progress               | int          | YES  |     | NULL    |       |
+| f_ready_signal           | tinyint(1)   | NO   | MUL | NULL    |       |
+| f_ready_time             | bigint       | YES  |     | NULL    |       |
+| f_cancel_signal          | tinyint(1)   | NO   | MUL | NULL    |       |
+| f_cancel_time            | bigint       | YES  |     | NULL    |       |
+| f_rerun_signal           | tinyint(1)   | NO   | MUL | NULL    |       |
+| f_end_scheduling_updates | int          | YES  |     | NULL    |       |
+| f_engine_name            | varchar(50)  | YES  | MUL | NULL    |       |
+| f_engine_type            | varchar(10)  | YES  | MUL | NULL    |       |
+| f_cores                  | int          | NO   | MUL | NULL    |       |
+| f_memory                 | int          | NO   | MUL | NULL    |       |
+| f_remaining_cores        | int          | NO   | MUL | NULL    |       |
+| f_remaining_memory       | int          | NO   | MUL | NULL    |       |
+| f_resource_in_use        | tinyint(1)   | NO   | MUL | NULL    |       |
+| f_apply_resource_time    | bigint       | YES  |     | NULL    |       |
+| f_return_resource_time   | bigint       | YES  |     | NULL    |       |
+| f_start_time             | bigint       | YES  |     | NULL    |       |
+| f_start_date             | datetime     | YES  |     | NULL    |       |
+| f_end_time               | bigint       | YES  |     | NULL    |       |
+| f_end_date               | datetime     | YES  |     | NULL    |       |
+| f_elapsed                | bigint       | YES  |     | NULL    |       |
++--------------------------+--------------+------+-----+---------+-------+
+43 rows in set (0.01 sec)
+'''
+
+
 # 定义与数据库相关的Task类
 class Task(DataBaseModel):
     # multi-party common configuration
@@ -195,6 +248,40 @@ class Task(DataBaseModel):
         db_table = "t_task"
         # 设置主键
         primary_key = CompositeKey('f_job_id', 'f_task_id', 'f_task_version', 'f_role', 'f_party_id')
+
+'''
+mysql> describe t_task;
++---------------------------------+--------------+------+-----+---------+-------+
+| Field                           | Type         | Null | Key | Default | Extra |
++---------------------------------+--------------+------+-----+---------+-------+
+| f_create_time                   | bigint       | YES  |     | NULL    |       |
+| f_create_date                   | datetime     | YES  |     | NULL    |       |
+| f_update_time                   | bigint       | YES  |     | NULL    |       |
+| f_update_date                   | datetime     | YES  |     | NULL    |       |
+| f_job_id                        | varchar(25)  | NO   | PRI | NULL    |       |
+| f_component_name                | text         | NO   |     | NULL    |       |
+| f_task_id                       | varchar(100) | NO   | PRI | NULL    |       |
+| f_task_version                  | bigint       | NO   | PRI | NULL    |       |
+| f_initiator_role                | varchar(50)  | NO   | MUL | NULL    |       |
+| f_initiator_party_id            | varchar(50)  | NO   | MUL | NULL    |       |
+| f_federated_mode                | varchar(10)  | NO   | MUL | NULL    |       |
+| f_federated_status_collect_type | varchar(10)  | NO   | MUL | NULL    |       |
+| f_status                        | varchar(50)  | NO   | MUL | NULL    |       |
+| f_status_code                   | int          | YES  | MUL | NULL    |       |
+| f_role                          | varchar(50)  | NO   | PRI | NULL    |       |
+| f_party_id                      | varchar(10)  | NO   | PRI | NULL    |       |
+| f_run_on_this_party             | tinyint(1)   | YES  | MUL | NULL    |       |
+| f_run_ip                        | varchar(100) | YES  |     | NULL    |       |
+| f_run_pid                       | int          | YES  |     | NULL    |       |
+| f_party_status                  | varchar(50)  | NO   | MUL | NULL    |       |
+| f_start_time                    | bigint       | YES  |     | NULL    |       |
+| f_start_date                    | datetime     | YES  |     | NULL    |       |
+| f_end_time                      | bigint       | YES  |     | NULL    |       |
+| f_end_date                      | datetime     | YES  |     | NULL    |       |
+| f_elapsed                       | bigint       | YES  |     | NULL    |       |
++---------------------------------+--------------+------+-----+---------+-------+
+25 rows in set (0.00 sec)
+'''
 
 # 追踪指标
 class TrackingMetric(DataBaseModel):
@@ -300,6 +387,42 @@ class MachineLearningModelInfo(DataBaseModel):
         db_table = "t_machine_learning_model_info"
         primary_key = CompositeKey('f_role', 'f_party_id', 'f_model_id', 'f_model_version')
 
+'''
+mysql> describe t_machine_learning_model_info;
++-------------------------+--------------+------+-----+---------+-------+
+| Field                   | Type         | Null | Key | Default | Extra |
++-------------------------+--------------+------+-----+---------+-------+
+| f_create_time           | bigint       | YES  |     | NULL    |       |
+| f_create_date           | datetime     | YES  |     | NULL    |       |
+| f_update_time           | bigint       | YES  |     | NULL    |       |
+| f_update_date           | datetime     | YES  |     | NULL    |       |
+| f_role                  | varchar(50)  | NO   | PRI | NULL    |       |
+| f_party_id              | varchar(10)  | NO   | PRI | NULL    |       |
+| f_roles                 | longtext     | NO   |     | NULL    |       |
+| f_job_id                | varchar(25)  | NO   | MUL | NULL    |       |
+| f_model_id              | varchar(100) | NO   | PRI | NULL    |       |
+| f_model_version         | varchar(100) | NO   | PRI | NULL    |       |
+| f_loaded_times          | int          | NO   |     | NULL    |       |
+| f_size                  | bigint       | NO   |     | NULL    |       |
+| f_description           | text         | YES  |     | NULL    |       |
+| f_initiator_role        | varchar(50)  | NO   | MUL | NULL    |       |
+| f_initiator_party_id    | varchar(50)  | NO   | MUL | NULL    |       |
+| f_runtime_conf          | longtext     | NO   |     | NULL    |       |
+| f_work_mode             | int          | NO   |     | NULL    |       |
+| f_train_dsl             | longtext     | NO   |     | NULL    |       |
+| f_train_runtime_conf    | longtext     | NO   |     | NULL    |       |
+| f_imported              | int          | NO   |     | NULL    |       |
+| f_job_status            | varchar(50)  | YES  |     | NULL    |       |
+| f_runtime_conf_on_party | longtext     | NO   |     | NULL    |       |
+| f_fate_version          | varchar(10)  | YES  |     | NULL    |       |
+| f_parent                | tinyint(1)   | YES  |     | NULL    |       |
+| f_parent_info           | longtext     | NO   |     | NULL    |       |
+| f_inference_dsl         | longtext     | NO   |     | NULL    |       |
++-------------------------+--------------+------+-----+---------+-------+
+26 rows in set (0.00 sec)
+'''
+
+
 # 定义模型标签
 class ModelTag(DataBaseModel):
     f_id = BigAutoField(primary_key=True)
@@ -308,6 +431,22 @@ class ModelTag(DataBaseModel):
 
     class Meta:
         db_table = "t_model_tag"
+'''
+mysql> describe t_model_tag;
++---------------+-------------+------+-----+---------+----------------+
+| Field         | Type        | Null | Key | Default | Extra          |
++---------------+-------------+------+-----+---------+----------------+
+| f_id          | bigint      | NO   | PRI | NULL    | auto_increment |
+| f_create_time | bigint      | YES  |     | NULL    |                |
+| f_create_date | datetime    | YES  |     | NULL    |                |
+| f_update_time | bigint      | YES  |     | NULL    |                |
+| f_update_date | datetime    | YES  |     | NULL    |                |
+| f_m_id        | varchar(25) | NO   |     | NULL    |                |
+| f_t_id        | bigint      | NO   |     | NULL    |                |
++---------------+-------------+------+-----+---------+----------------+
+7 rows in set (0.00 sec)
+'''
+
 
 # 定义标签
 class Tag(DataBaseModel):
@@ -317,6 +456,23 @@ class Tag(DataBaseModel):
 
     class Meta:
         db_table = "t_tags"
+
+'''
+mysql> describe t_tags;
++---------------+--------------+------+-----+---------+----------------+
+| Field         | Type         | Null | Key | Default | Extra          |
++---------------+--------------+------+-----+---------+----------------+
+| f_id          | bigint       | NO   | PRI | NULL    | auto_increment |
+| f_create_time | bigint       | YES  |     | NULL    |                |
+| f_create_date | datetime     | YES  |     | NULL    |                |
+| f_update_time | bigint       | YES  |     | NULL    |                |
+| f_update_date | datetime     | YES  |     | NULL    |                |
+| f_name        | varchar(100) | NO   | UNI | NULL    |                |
+| f_desc        | text         | YES  |     | NULL    |                |
++---------------+--------------+------+-----+---------+----------------+
+7 rows in set (0.00 sec)
+'''
+
 
 # 定义组件摘要
 class ComponentSummary(DataBaseModel):
@@ -363,6 +519,8 @@ class ModelOperationLog(DataBaseModel):
     class Meta:
         db_table = "t_model_operation_log"
 
+
+
 # 定义引擎注册相关信息
 # 作为数据库搜索的判断条件
 class EngineRegistry(DataBaseModel):
@@ -379,3 +537,26 @@ class EngineRegistry(DataBaseModel):
     class Meta:
         db_table = "t_engine_registry"
         primary_key = CompositeKey('f_engine_name', 'f_engine_type')
+
+'''
+mysql> describe t_engine_registry;
++--------------------+-------------+------+-----+---------+-------+
+| Field              | Type        | Null | Key | Default | Extra |
++--------------------+-------------+------+-----+---------+-------+
+| f_create_time      | bigint      | YES  |     | NULL    |       |
+| f_create_date      | datetime    | YES  |     | NULL    |       |
+| f_update_time      | bigint      | YES  |     | NULL    |       |
+| f_update_date      | datetime    | YES  |     | NULL    |       |
+| f_engine_type      | varchar(10) | NO   | PRI | NULL    |       |
+| f_engine_name      | varchar(50) | NO   | PRI | NULL    |       |
+| f_engine_entrance  | varchar(50) | NO   | MUL | NULL    |       |
+| f_engine_config    | longtext    | NO   |     | NULL    |       |
+| f_cores            | int         | NO   | MUL | NULL    |       |
+| f_memory           | int         | NO   | MUL | NULL    |       |
+| f_remaining_cores  | int         | NO   | MUL | NULL    |       |
+| f_remaining_memory | int         | NO   | MUL | NULL    |       |
+| f_nodes            | int         | NO   | MUL | NULL    |       |
++--------------------+-------------+------+-----+---------+-------+
+13 rows in set (0.00 sec)
+    
+'''

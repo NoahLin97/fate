@@ -21,27 +21,36 @@ from fate_flow.scheduler.dsl_parser import DSLParser, DSLParserV2
 from fate_flow.utils.config_adapter import JobRuntimeConfigAdapter
 
 
+# 根据job_id从数据库中读取job的dsl解析器
 @DB.connection_context()
 def get_job_dsl_parser_by_job_id(job_id):
+    # 在t_job表中，从数据库中搜索f_job_id == job_id 对应的f_dsl、f_runtime_conf_on_party、f_train_runtime_conf
     jobs = Job.select(Job.f_dsl, Job.f_runtime_conf_on_party, Job.f_train_runtime_conf).where(Job.f_job_id == job_id)
     if jobs:
         job = jobs[0]
+        # 得到对应job_id的dsl解析器
         job_dsl_parser = get_job_dsl_parser(dsl=job.f_dsl, runtime_conf=job.f_runtime_conf_on_party,
                                             train_runtime_conf=job.f_train_runtime_conf)
         return job_dsl_parser
     else:
         return None
 
+
 # 得到对应job_id的dsl解析器
 def get_job_dsl_parser(dsl=None, runtime_conf=None, pipeline_dsl=None, train_runtime_conf=None):
+
     parser_version = str(runtime_conf.get('dsl_version', '1'))
+    # 通过版本号得到dsl的解析器实例，得到的是DSLParser()或DSLParserV2()
     dsl_parser = get_dsl_parser_by_version(parser_version)
+
     default_runtime_conf_path = os.path.join(file_utils.get_python_base_directory(),
                                              *['federatedml', 'conf', 'default_runtime_conf'])
     setting_conf_path = os.path.join(file_utils.get_python_base_directory(), *['federatedml', 'conf', 'setting_conf'])
+
     # 从fate_flow.utils.config_adapter中调用JobRuntimeConfigAdapter模块的get_job_type函数
     # 得到job的类型
     job_type = JobRuntimeConfigAdapter(runtime_conf).get_job_type()
+
     # 从fate_flow.scheduler.dsl_parser中调用DSLParser模块的run函数
     # 运行得到dsl解析器的实例
     dsl_parser.run(dsl=dsl,
@@ -54,6 +63,7 @@ def get_job_dsl_parser(dsl=None, runtime_conf=None, pipeline_dsl=None, train_run
     return dsl_parser
 
 
+# 重置联邦任务的调度顺序
 def federated_order_reset(dest_partys, scheduler_partys_info):
     dest_partys_new = []
     scheduler = []
@@ -73,6 +83,7 @@ def federated_order_reset(dest_partys, scheduler_partys_info):
     return dest_partys_new
 
 
+# 获取对应版本的dsl解析器映射，返回dsl解析器类
 def get_parser_version_mapping():
     return {
         # 从fate_flow.scheduler.dsl_parser导入DSLParser函数
@@ -83,8 +94,9 @@ def get_parser_version_mapping():
         "2": DSLParserV2()
     }
 
-# 通过版本号得到dsl的解析器
+# 通过版本号得到dsl的解析器，默认为1
 def get_dsl_parser_by_version(version: str = "1"):
+    # 获取对应版本的dsl解析器映射，返回dsl解析器类
     mapping = get_parser_version_mapping()
     if isinstance(version, int):
         version = str(version)

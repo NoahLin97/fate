@@ -25,7 +25,7 @@ def conf_realpath(conf_name):
     conf_path = f"conf/{conf_name}"
     return os.path.join(file_utils.get_project_base_directory(), conf_path)
 
-# 获得基础的config
+# 获得基础的config，从"service_conf.yaml"文件中找到key对应的值
 def get_base_config(key, default=None, conf_name=SERVICE_CONF):
     # 从fate_arch.common调用file_utils模块
     # load_yaml_conf方法根据config路径获取对应的yaml文件内容

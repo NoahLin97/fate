@@ -99,7 +99,7 @@ class PipelinedModel(object):
                                    model_proto_index=model_proto_index)
         stat_logger.info("Save {} {} successfully".format(component_name, model_alias))
 
-    # 读取组件模型
+    # 从文件中读取组件模型
     # 被调：
     # 被fate_flow.apps.model_app.py里面的operate_model函数调用
     # 被fate_flow.apps.model_app.py里面的get_predict_conf函数调用

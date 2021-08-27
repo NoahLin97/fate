@@ -172,37 +172,20 @@ class MachineLearningModel(DataBaseModel):
 
 
 """
-mysql> describe t_machine_learning_model_info;
-+-------------------------+--------------+------+-----+---------+-------+
-| Field                   | Type         | Null | Key | Default | Extra |
-+-------------------------+--------------+------+-----+---------+-------+
-| f_create_time           | bigint       | YES  |     | NULL    |       |
-| f_create_date           | datetime     | YES  |     | NULL    |       |
-| f_update_time           | bigint       | YES  |     | NULL    |       |
-| f_update_date           | datetime     | YES  |     | NULL    |       |
-| f_role                  | varchar(50)  | NO   | PRI | NULL    |       |
-| f_party_id              | varchar(10)  | NO   | PRI | NULL    |       |
-| f_roles                 | longtext     | NO   |     | NULL    |       |
-| f_job_id                | varchar(25)  | NO   | MUL | NULL    |       |
-| f_model_id              | varchar(100) | NO   | PRI | NULL    |       |
-| f_model_version         | varchar(100) | NO   | PRI | NULL    |       |
-| f_loaded_times          | int          | NO   |     | NULL    |       |
-| f_size                  | bigint       | NO   |     | NULL    |       |
-| f_description           | text         | YES  |     | NULL    |       |
-| f_initiator_role        | varchar(50)  | NO   | MUL | NULL    |       |
-| f_initiator_party_id    | varchar(50)  | NO   | MUL | NULL    |       |
-| f_runtime_conf          | longtext     | NO   |     | NULL    |       |
-| f_work_mode             | int          | NO   |     | NULL    |       |
-| f_train_dsl             | longtext     | NO   |     | NULL    |       |
-| f_train_runtime_conf    | longtext     | NO   |     | NULL    |       |
-| f_imported              | int          | NO   |     | NULL    |       |
-| f_job_status            | varchar(50)  | YES  |     | NULL    |       |
-| f_runtime_conf_on_party | longtext     | NO   |     | NULL    |       |
-| f_fate_version          | varchar(10)  | YES  |     | NULL    |       |
-| f_parent                | tinyint(1)   | YES  |     | NULL    |       |
-| f_parent_info           | longtext     | NO   |     | NULL    |       |
-| f_inference_dsl         | longtext     | NO   |     | NULL    |       |
-+-------------------------+--------------+------+-----+---------+-------+
+mysql> describe t_machine_learning_model;
++-----------------+--------------+------+-----+---------+-------+
+| Field           | Type         | Null | Key | Default | Extra |
++-----------------+--------------+------+-----+---------+-------+
+| f_model_id      | varchar(100) | NO   | PRI | NULL    |       |
+| f_model_version | varchar(100) | NO   | PRI | NULL    |       |
+| f_size          | bigint       | NO   |     | NULL    |       |
+| f_create_time   | bigint       | NO   |     | NULL    |       |
+| f_update_time   | bigint       | NO   |     | NULL    |       |
+| f_description   | text         | YES  |     | NULL    |       |
+| f_content       | longtext     | NO   |     | NULL    |       |
+| f_slice_index   | int          | NO   | PRI | NULL    |       |
++-----------------+--------------+------+-----+---------+-------+
+8 rows in set (0.03 sec)
 """
 
 

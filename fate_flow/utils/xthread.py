@@ -31,6 +31,8 @@ from fate_flow.settings import stat_logger
 _threads_queues = weakref.WeakKeyDictionary()
 _shutdown = False
 
+# xthread 多线程
+
 def _python_exit():
     global _shutdown
     _shutdown = True

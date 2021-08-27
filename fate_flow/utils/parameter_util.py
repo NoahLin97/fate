@@ -23,11 +23,15 @@ import os
 from fate_flow.utils.dsl_exception import *
 
 
+# 定义ParameterUtil基类
 class BaseParameterUtil(object):
+    # 重写参数
     @classmethod
     def override_parameter(cls, **kwargs):
         pass
 
+
+    # 将object转化为dictionary
     @classmethod
     def change_object_to_dict(cls, obj):
         ret_dict = {}
@@ -35,6 +39,7 @@ class BaseParameterUtil(object):
         variable_dict = obj.__dict__
         for variable in variable_dict:
             attr = getattr(obj, variable)
+            # dir(builtins) 查看内置列表
             if attr and type(attr).__name__ not in dir(builtins):
                 ret_dict[variable] = BaseParameterUtil.change_object_to_dict(attr)
             else:
@@ -42,15 +47,20 @@ class BaseParameterUtil(object):
 
         return ret_dict
 
+
+    # 根据submit_dict传来的内容重写参数
     @staticmethod
     def _override_parameter(setting_conf_prefix=None, submit_dict=None, module=None,
                             module_alias=None, version=1, redundant_param_check=True):
+        # alias 别名，redundant 冗余的
 
+        # 获取setting的config
         _module_setting = BaseParameterUtil.get_setting_conf(setting_conf_prefix, module, module_alias)
 
         param_class_path = _module_setting["param_class"]
+        # 根据param_class在param_module中得到参数对象param_obj
         param_class, param_obj = BaseParameterUtil.get_param_object(param_class_path, module, module_alias)
-
+        # 将object转化为dictionary
         default_runtime_dict = BaseParameterUtil.change_object_to_dict(param_obj)
 
         if not submit_dict:
@@ -58,8 +68,10 @@ class BaseParameterUtil(object):
 
         runtime_role_parameters = {}
 
+        # _support_rols没用到
         _support_rols = _module_setting["role"].keys()
         role_on_module = copy.deepcopy(submit_dict["role"])
+
         for role in submit_dict["role"]:
             # _role_setting = None
             # for _rolelist in _support_rols:
@@ -71,6 +83,7 @@ class BaseParameterUtil(object):
             # if not _role_setting:
             #     continue
 
+            # 获取代码的路径
             _code_path = BaseParameterUtil.get_code_path(module_setting=_module_setting,
                                                      role=role,
                                                      module=module,
@@ -79,6 +92,7 @@ class BaseParameterUtil(object):
                 del role_on_module[role]
                 continue
             # _code_path = os.path.join(_module_setting.get('module_path'), _role_setting.get('program'))
+
             partyid_list = submit_dict["role"][role]
             runtime_role_parameters[role] = []
 
@@ -90,10 +104,13 @@ class BaseParameterUtil(object):
 
                 role_param_obj = copy.deepcopy(param_obj)
 
+                # 公共参数
                 common_parameters = submit_dict.get("component_parameters", {}).get("common", {}) if version == 2 \
                     else submit_dict.get("algorithm_parameters", {})
+
                 if module_alias in common_parameters:
                     parameters = common_parameters.get(module_alias)
+                    # 合并参数，返回runtime_dict
                     merge_dict = BaseParameterUtil.merge_parameters(runtime_dict[param_class],
                                                                 parameters,
                                                                 role_param_obj,
@@ -113,6 +130,7 @@ class BaseParameterUtil(object):
 
                             if module_alias in role_dict:
                                 parameters = role_dict.get(module_alias)
+                                # 合并参数，返回runtime_dict
                                 merge_dict = BaseParameterUtil.merge_parameters(runtime_dict[param_class],
                                                                             parameters,
                                                                             role_param_obj,
@@ -130,6 +148,7 @@ class BaseParameterUtil(object):
                     role_dict = submit_dict.get("role_parameters", {}).get(role, {})
                     if module_alias in role_dict:
                         role_parameters = role_dict.get(module_alias)
+                        # 合并参数，返回runtime_dict
                         merge_dict = BaseParameterUtil.merge_parameters(runtime_dict[param_class],
                                                                     role_parameters,
                                                                     role_param_obj,
@@ -147,6 +166,7 @@ class BaseParameterUtil(object):
                 except Exception as e:
                     raise ParameterCheckError(component=module_alias, module=module, other_info=e)
 
+                # 更新runtime_dict中相应的数据
                 runtime_dict['local'] = submit_dict.get('local', {})
                 my_local = {
                     "role": role, "party_id": partyid_list[idx]
@@ -163,11 +183,15 @@ class BaseParameterUtil(object):
 
         return runtime_role_parameters
 
+
+    # 合并参数，返回runtime_dict
     @classmethod
     def merge_parameters(cls, runtime_dict, role_parameters, param_obj, idx=-1, role=None, role_num=0, component=None,
                          module=None, version=1, redundant_param_check=True):
+
         param_variables = param_obj.__dict__
         for key, val_list in role_parameters.items():
+            # 剔除冗余参数和不符合的参数
             if not redundant_param_check:
                 if key not in param_variables:
                     continue
@@ -184,6 +208,7 @@ class BaseParameterUtil(object):
                     if len(val_list) != role_num:
                         raise RoleParameterNotConsistencyError(role=role, parameter=key)
 
+                    # 给runtime_dict和param_obj赋值，从role_parameters中读取
                     runtime_dict[key] = val_list[idx]
                     setattr(param_obj, key, val_list[idx])
                 else:
@@ -193,6 +218,7 @@ class BaseParameterUtil(object):
                 if key not in runtime_dict:
                     runtime_dict[key] = {}
 
+                # 递归调用
                 runtime_dict[key] = BaseParameterUtil.merge_parameters(runtime_dict.get(key),
                                                                    val_list,
                                                                    attr,
@@ -207,10 +233,14 @@ class BaseParameterUtil(object):
 
         return runtime_dict
 
+
+    # 获取参数类名
     @classmethod
     def get_param_class_name(cls, setting_conf_prefix, module):
+        # 获取模块设置路径
         _module_setting_path = os.path.join(setting_conf_prefix, module + ".json")
         _module_setting = None
+        # 读取模块设置内容到_module_setting中
         with open(_module_setting_path, "r") as fin:
             _module_setting = json.loads(fin.read())
 
@@ -219,12 +249,17 @@ class BaseParameterUtil(object):
 
         return param_class
 
+
+    # 获取setting的config
     @classmethod
     def get_setting_conf(cls, setting_conf_prefix, module, module_alias):
+        # 获取模块设置文件路径
         _module_setting_path = os.path.join(setting_conf_prefix, module + ".json")
+
         if not os.path.isfile(_module_setting_path):
             raise ModuleNotExistError(component=module_alias, module=module)
 
+        # 读取模块路径文件的内容
         _module_setting = None
         fin = None
         try:
@@ -238,13 +273,17 @@ class BaseParameterUtil(object):
 
         return _module_setting
 
+
+    # 获取代码的路径
     @staticmethod
     def get_code_path(role=None, setting_conf_prefix=None, module=None, module_alias=None, module_setting=None):
+        # 获取setting的config
         if not module_setting:
             _module_setting = BaseParameterUtil.get_setting_conf(setting_conf_prefix, module, module_alias)
         else:
             _module_setting = module_setting
 
+        # 获取支持的role的setting
         _support_roles = _module_setting["role"].keys()
         _role_setting = None
         for _rolelist in _support_roles:
@@ -260,15 +299,19 @@ class BaseParameterUtil(object):
 
         return _code_path
 
+
+    # 根据param_class在param_module中得到参数对象
     @classmethod
     def get_param_object(cls, param_class_path, module, module_alias):
         param_class = param_class_path.split("/", -1)[-1]
 
         param_module_path = ".".join(param_class_path.split("/", -1)[:-1]).replace(".py", "")
+
         if not importlib.util.find_spec(param_module_path):
             raise ParamClassNotExistError(component=module_alias, module=module,
                                           other_info="{} does not exist".format(param_module_path))
 
+        # import_module作用：可以通过字符串来导入模块，同一文件夹下字符串为模块名，不同文件夹字符串为模块的路径
         param_module = importlib.import_module(param_module_path)
 
         if getattr(param_module, param_class) is None:
@@ -277,21 +320,43 @@ class BaseParameterUtil(object):
 
         param_obj = getattr(param_module, param_class)()
 
+        """
+        获取对象属性后返回值可直接使用：
+        >>> class A(object):        
+        ...     def set(self, a, b):
+        ...         x = a        
+        ...         a = b        
+        ...         b = x        
+        ...         print a, b   
+        ... 
+        >>> a = A()                 
+        >>> c = getattr(a, 'set')
+        >>> c(a='1', b='2')
+        2 1
+        >>> 
+        """
+
         return param_class, param_obj
 
+
+    # 获取job的参数
     @staticmethod
     def get_job_parameters(submit_dict):
         raise NotImplementedError
 
+
+    # 合并字典
     @staticmethod
     def merge_dict(dict1, dict2):
         merge_ret = {}
         keyset = dict1.keys() | dict2.keys()
         for key in keyset:
+            # key同时在dict1和dict2中
             if key in dict1 and key in dict2:
                 val1 = dict1.get(key)
                 val2 = dict2.get(key)
                 if isinstance(val1, dict):
+                    # 递归调用，合并字典
                     merge_ret[key] = BaseParameterUtil.merge_dict(val1, val2)
                 else:
                     merge_ret[key] = val2
@@ -303,7 +368,9 @@ class BaseParameterUtil(object):
         return merge_ret
 
 
+# 继承BaseParameterUtil
 class ParameterUtil(BaseParameterUtil):
+    # 根据submit_dict传来的内容重写参数
     @staticmethod
     def override_parameter(setting_conf_prefix=None, submit_dict=None, module=None,
                            module_alias=None, redundant_param_check=True):
@@ -315,6 +382,7 @@ class ParameterUtil(BaseParameterUtil):
                                                    version=1,
                                                    redundant_param_check=redundant_param_check)
 
+    # 获取args参数输入
     @classmethod
     def get_args_input(cls, submit_dict, module="args"):
         if "role_parameters" not in submit_dict:
@@ -332,6 +400,7 @@ class ParameterUtil(BaseParameterUtil):
                 continue
             partyid_list = submit_dict["role"][role]
 
+            # 获取args参数
             args_parameters = submit_dict["role_parameters"][role].get(module)
             args_input[role] = []
 
@@ -358,6 +427,8 @@ class ParameterUtil(BaseParameterUtil):
 
         return args_input, args_datakey
 
+
+    # 获取job参数
     @staticmethod
     def get_job_parameters(submit_dict):
         ret = {}
@@ -369,7 +440,9 @@ class ParameterUtil(BaseParameterUtil):
         return ret
 
 
+# 继承BaseParameterUtil，和上一个区别是一个是version1 一个是version2
 class ParameterUtilV2(BaseParameterUtil):
+    # 根据submit_dict传来的内容重写参数
     @classmethod
     def override_parameter(cls, setting_conf_prefix=None, submit_dict=None, module=None,
                            module_alias=None, redundant_param_check=True):
@@ -380,6 +453,8 @@ class ParameterUtilV2(BaseParameterUtil):
                                                  version=2,
                                                  redundant_param_check=redundant_param_check)
 
+
+    # 获取输入参数
     @classmethod
     def get_input_parameters(cls, submit_dict, components=None):
         if submit_dict.get("component_parameters", {}).get("role") is None or components is None:
@@ -417,10 +492,13 @@ class ParameterUtilV2(BaseParameterUtil):
 
         return input_parameters
 
+
+    # 获取job参数
     @staticmethod
     def get_job_parameters(submit_dict):
         ret = {}
         job_parameters = submit_dict.get("job_parameters", {})
+        # v2有公共参数
         common_job_parameters = job_parameters.get("common", {})
         role_job_parameters = job_parameters.get("role", {})
         for role in submit_dict["role"]:

@@ -41,7 +41,7 @@ def get_project_base_directory():
 def get_python_base_directory():
     return os.path.join(get_project_base_directory(), "python")
 
-
+# 载入json格式的config内容
 @cached(cache=LRUCache(maxsize=10))
 def load_json_conf(conf_path):
     if os.path.isabs(conf_path):

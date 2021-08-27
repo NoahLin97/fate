@@ -40,6 +40,7 @@ class DAGScheduler(Cron):
         schedule_logger(job_id).info('submit job, job_id {}, body {}'.format(job_id, job_data))
         job_dsl = job_data.get('job_dsl', {})
         job_runtime_conf = job_data.get('job_runtime_conf', {})
+        # 检查job的runtime config是否有必要的参数
         job_utils.check_job_runtime_conf(job_runtime_conf)
         authentication_utils.check_constraint(job_runtime_conf, job_dsl)
 

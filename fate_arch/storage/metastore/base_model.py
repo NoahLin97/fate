@@ -86,6 +86,7 @@ class BaseModel(Model):
 
         self.f_update_time = current_timestamp()
         self.f_update_date = timestamp_to_date(self.f_update_time)
+        # super() 函数是用于调用父类(超类)的一个方法。
         return super(BaseModel, self).save(*args, **kwargs)
 
     @classmethod

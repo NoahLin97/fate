@@ -89,6 +89,7 @@ SUPPORT_BACKENDS_ENTRANCE = {
 # Scheduling
 DEFAULT_REMOTE_REQUEST_TIMEOUT = 30 * 1000  # ms
 DEFAULT_FEDERATED_COMMAND_TRYS = 3
+# 定义默认job超时时间
 JOB_DEFAULT_TIMEOUT = 3 * 24 * 60 * 60
 JOB_START_TIMEOUT = 60 * 1000  # ms
 END_STATUS_JOB_SCHEDULING_TIME_LIMIT = 5 * 60 * 1000  # ms
@@ -98,6 +99,7 @@ END_STATUS_JOB_SCHEDULING_UPDATES = 1
 FATE_FLOW_MODEL_TRANSFER_ENDPOINT = "/v1/model/transfer"
 FATE_MANAGER_GET_NODE_INFO_ENDPOINT = "/fate-manager/api/site/secretinfo"
 FATE_MANAGER_NODE_CHECK_ENDPOINT = "/fate-manager/api/site/checksite"
+# fateboard 的url结尾
 FATE_BOARD_DASHBOARD_ENDPOINT = "/index.html#/dashboard?job_id={}&role={}&party_id={}"
 
 # Logger

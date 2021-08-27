@@ -18,20 +18,28 @@ import argparse
 from fate_arch.common.log import schedule_logger
 from fate_arch.session import Session
 
-
+# 通过解析命令行的方式来stop、kill等处理session
 class SessionStop(object):
     @classmethod
     def run(cls):
+        # argparse是一个Python模块：命令行选项、参数和子命令解析器。
+        # 主要有三个步骤：
+        # 创建 ArgumentParser() 对象
+        # 调用 add_argument() 方法添加参数
+        # 使用 parse_args() 解析添加的参数
+
         parser = argparse.ArgumentParser()
         parser.add_argument('-j', '--job_id', required=True, type=str, help="job id")
         parser.add_argument('--computing', help="computing engine", type=str)
         parser.add_argument('--federation', help="federation engine", type=str)
         parser.add_argument('--storage', help="storage engine", type=str)
         parser.add_argument('-c', '--command', required=True, type=str, help="command")
+
         args = parser.parse_args()
         session_job_id = args.job_id
         fate_job_id = session_job_id.split('_')[0]
         command = args.command
+
         with Session(computing_type=args.computing, federation_type=args.federation) as session:
             session.init_computing(computing_session_id=session_job_id)
             try:
