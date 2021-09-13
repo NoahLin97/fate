@@ -37,6 +37,7 @@ from fate_flow.utils.authentication_utils import PrivilegeAuth
 class TaskController(object):
     INITIATOR_COLLECT_FIELDS = ["status", "party_status", "start_time", "update_time", "end_time", "elapsed"]
 
+    # 创建task任务
     @classmethod
     def create_task(cls, role, party_id, run_on_this_party, task_info):
         task_info["role"] = role
@@ -49,6 +50,7 @@ class TaskController(object):
             task_info["task_id"] = job_utils.generate_task_id(job_id=task_info["job_id"], component_name=task_info["component_name"])
         if "task_version" not in task_info:
             task_info["task_version"] = 0
+        # 创建task任务
         JobSaver.create_task(task_info=task_info)
 
     @classmethod

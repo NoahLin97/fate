@@ -368,6 +368,7 @@ class ResourceManager(object):
     @DB.connection_context()
     # 获取引擎注册信息
     def get_engine_registration_info(cls, engine_type, engine_name) -> EngineRegistry:
+        # 从数据库中读取
         engines = EngineRegistry.select().where(EngineRegistry.f_engine_type == engine_type,
                                                 EngineRegistry.f_engine_name == engine_name)
         if engines:

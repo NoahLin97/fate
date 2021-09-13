@@ -31,6 +31,7 @@ class FederatedScheduler(object):
 
     # Job
     @classmethod
+    # 创建job任务
     def create_job(cls, job: Job):
         return cls.job_command(job=job, command="create", command_body=job.to_human_model_dict(), order_federated=True)
 

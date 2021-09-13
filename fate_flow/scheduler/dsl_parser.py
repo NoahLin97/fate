@@ -315,6 +315,7 @@ class BaseDSLParser(object):
 
         return dependent_components
 
+    # 获取拓扑组件
     def get_topology_components(self):
         topo_components = []
         for i in range(len(self.topo_rank)):

@@ -124,14 +124,17 @@ def check_job_runtime_conf(runtime_conf: typing.Dict):
             "host": [10000]
         },
     '''
+
     # 先检查是否有必须的initiator、job_parameters、role三个部分
     detect_utils.check_config(runtime_conf, ['initiator', 'job_parameters', 'role'])
     # 再检查initiator中是否有对应的role、party_id
     detect_utils.check_config(runtime_conf['initiator'], ['role', 'party_id'])
+
     # deal party id
-    # 把partyid和role由字符串转化为int
+    # 把partyid和role里面的partyid转化为int
     runtime_conf['initiator']['party_id'] = int(runtime_conf['initiator']['party_id'])
     for r in runtime_conf['role'].keys():
+        # 可能一个role有多个partyid
         for i in range(len(runtime_conf['role'][r])):
             runtime_conf['role'][r][i] = int(runtime_conf['role'][r][i])
 
@@ -166,19 +169,26 @@ def new_runtime_conf(job_dir, method, module, role, party_id):
 
 # 保存job的config
 def save_job_conf(job_id, role, job_dsl, job_runtime_conf, job_runtime_conf_on_party, train_runtime_conf, pipeline_dsl=None):
+    # 根据对应的jobid和role来获取job的config路径
     path_dict = get_job_conf_path(job_id=job_id, role=role)
+
     os.makedirs(os.path.dirname(path_dict.get('job_dsl_path')), exist_ok=True)
     os.makedirs(os.path.dirname(path_dict.get('job_runtime_conf_on_party_path')), exist_ok=True)
+
     for data, conf_path in [(job_dsl, path_dict['job_dsl_path']),
                             (job_runtime_conf, path_dict['job_runtime_conf_path']),
                             (job_runtime_conf_on_party, path_dict['job_runtime_conf_on_party_path']),
                             (train_runtime_conf, path_dict['train_runtime_conf_path']),
                             (pipeline_dsl, path_dict['pipeline_dsl_path'])]:
         with open(conf_path, 'w+') as f:
+            # truncate() 方法用于截断文件，如果指定了可选参数 size，则表示截断文件为 size 个字符。
+            # 如果没有指定 size，则从当前位置起截断；截断之后 size 后面的所有字符被删除。
             f.truncate()
             if not data:
                 data = {}
             f.write(json_dumps(data, indent=4))
+            # flush() 方法是用来刷新缓冲区的，即将缓冲区中的数据立刻写入文件，同时清空缓冲区，不需要是被动的等待输出缓冲区写入。
+            # 一般情况下，文件关闭后会自动刷新缓冲区，但有时你需要在关闭前刷新它，这时就可以使用 flush() 方法。
             f.flush()
     return path_dict
 
@@ -192,7 +202,9 @@ def get_job_conf_path(job_id, role):
     job_runtime_conf_path = os.path.join(job_dir, 'job_runtime_conf.json')
     # 获取对应role的config
     job_runtime_conf_on_party_path = os.path.join(job_dir, role, 'job_runtime_on_party_conf.json')
+    # 获取train_runtime_conf
     train_runtime_conf_path = os.path.join(job_dir, 'train_runtime_conf.json')
+    # 获取pipeline_dsl
     pipeline_dsl_path = os.path.join(job_dir, 'pipeline_dsl.json')
     return {'job_dsl_path': job_dsl_path,
             'job_runtime_conf_path': job_runtime_conf_path,

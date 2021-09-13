@@ -31,6 +31,7 @@ class JobSaver(object):
     def create_job(cls, job_info):
         return cls.create_job_family_entity(Job, job_info)
 
+    # 创建task任务
     @classmethod
     def create_task(cls, task_info):
         return cls.create_job_family_entity(Task, task_info)

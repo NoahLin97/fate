@@ -43,15 +43,42 @@ class JobRuntimeConfigAdapter(object):
         if int(self.job_runtime_conf.get('dsl_version', 1)) == 2:
             if "common" not in self.job_runtime_conf["job_parameters"]:
                 raise RuntimeError("the configuration format for v2 version must be job_parameters:common")
+
+            # 创建一个RunParameters对象实例
             job_parameters = RunParameters(**self.job_runtime_conf['job_parameters']['common'])
+            # to_dict()方法返回非空的RunParameters类变量
             self.job_runtime_conf['job_parameters']['common'] = job_parameters.to_dict()
+
         else:
             if "processors_per_node" in self.job_runtime_conf['job_parameters']:
                 self.job_runtime_conf['job_parameters']["eggroll_run"] = \
                     {"eggroll.session.processors.per.node": self.job_runtime_conf['job_parameters']["processors_per_node"]}
+
+            # 创建一个RunParameters对象实例
             job_parameters = RunParameters(**self.job_runtime_conf['job_parameters'])
+            # to_dict()方法返回非空的RunParameters类变量
             self.job_runtime_conf['job_parameters'] = job_parameters.to_dict()
         return job_parameters
+
+    '''
+    "dsl_version": 2,
+    "initiator": {},
+    "role": {},
+    "job_parameters": {
+        "common": {
+            "job_type": "train",
+            "backend": 0,
+            "work_mode": 0
+        }
+    },
+    '''
+
+    '''
+    "job_parameters": {
+        "work_mode": 0
+    },
+    '''
+
 
 
     # 更新公共参数
@@ -85,8 +112,24 @@ class JobRuntimeConfigAdapter(object):
     def get_job_work_mode(self):
         if int(self.job_runtime_conf.get('dsl_version', 1)) == 2:
             work_mode = self.job_runtime_conf['job_parameters'].get('common', {}).get('work_mode')
+            '''
+            {
+            "dsl_version": 2,
+            "job_parameters": {
+                "common": {
+                    "job_type": "train",
+                    "backend": 0,
+                    "work_mode": 0
+                }
+            },
+            '''
         else:
             work_mode = self.job_runtime_conf['job_parameters'].get('work_mode')
+            '''
+            "job_parameters": {
+            "work_mode": 0
+            },
+            '''
         return work_mode
 
 

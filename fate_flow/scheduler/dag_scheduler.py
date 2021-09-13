@@ -33,34 +33,67 @@ from fate_flow.settings import END_STATUS_JOB_SCHEDULING_TIME_LIMIT, END_STATUS_
 
 
 class DAGScheduler(Cron):
+    # classmethod 修饰符对应的函数不需要实例化，不需要 self 参数，但第一个参数需要是表示自身类的 cls 参数，可以来调用类的属性，类的方法，实例化对象等。
     @classmethod
     def submit(cls, job_data, job_id=None):
+        # 如果没有job_id，就调用fate_flow.utils.job_utils.py下的generate_job_id()方法生成jobid
         if not job_id:
             job_id = job_utils.generate_job_id()
+
         schedule_logger(job_id).info('submit job, job_id {}, body {}'.format(job_id, job_data))
+        '''
+           "job_runtime_conf":{},
+           "job_dsl":{}
+        '''
         job_dsl = job_data.get('job_dsl', {})
         job_runtime_conf = job_data.get('job_runtime_conf', {})
-        # 检查job的runtime config是否有必要的参数
+
+        # 从fate_flow.utils.job_utils.py中调用check_job_runtime_conf方法来检查job的runtime config是否有必要的参数
         job_utils.check_job_runtime_conf(job_runtime_conf)
+
+        # 从fate_flow.utils.authentication_utils.py中调用check_constraint方法来检查约束
         authentication_utils.check_constraint(job_runtime_conf, job_dsl)
 
+        '''
+        "job_runtime_conf":{
+            "initiator": {
+                "role": "guest",
+                "party_id": 9999
+            },
+        '''
+
+        # 调用fate_flow/utils/config_adapter模块的JobRuntimeConfigAdapter方法获取一个Adapter对象，
+        # 调用get_common_parameters方法获取common参数
         job_initiator = job_runtime_conf['initiator']
         conf_adapter = JobRuntimeConfigAdapter(job_runtime_conf)
+        # get_common_parameters()方法返回的是RunParameters对象
         common_job_parameters = conf_adapter.get_common_parameters()
 
+        # eg：train
         if common_job_parameters.job_type != 'predict':
             # generate job model info
+            # 生成模型id
             common_job_parameters.model_id = model_utils.gen_model_id(job_runtime_conf['role'])
+            # model_version为jobid eg：2021083117024849868422
             common_job_parameters.model_version = job_id
             train_runtime_conf = {}
+
+        # job_type为预测
         else:
             # check predict job parameters
+            # 检查是否有model_id和model_version这两个参数 这两个参数唯一确定一个模型
             detect_utils.check_config(common_job_parameters.to_dict(), ['model_id', 'model_version'])
+
             # get inference dsl from pipeline model as job dsl
+            # 从管道模型中获取推理 dsl作为job dsl
             tracker = Tracker(job_id=job_id, role=job_initiator['role'], party_id=job_initiator['party_id'],
                               model_id=common_job_parameters.model_id, model_version=common_job_parameters.model_version)
+
+            # 从文件中读取输出的组件模型
             pipeline_model = tracker.get_output_model('pipeline')
             train_runtime_conf = json_loads(pipeline_model['Pipeline'].train_runtime_conf)
+
+            # 检查是否已经部署
             if not model_utils.check_if_deployed(role=job_initiator['role'],
                                              party_id=job_initiator['party_id'],
                                              model_id=common_job_parameters.model_id,
@@ -68,6 +101,7 @@ class DAGScheduler(Cron):
                 raise Exception(f"Model {common_job_parameters.model_id} {common_job_parameters.model_version} has not been deployed yet.")
             job_dsl = json_loads(pipeline_model['Pipeline'].inference_dsl)
 
+        # 定义与数据库相关的Job类
         job = Job()
         job.f_job_id = job_id
         job.f_dsl = job_dsl
@@ -79,6 +113,7 @@ class DAGScheduler(Cron):
         job.f_role = job_initiator['role']
         job.f_party_id = job_initiator['party_id']
 
+        # 保存job的config
         path_dict = job_utils.save_job_conf(job_id=job_id,
                                             role=job.f_initiator_role,
                                             job_dsl=job_dsl,
@@ -91,11 +126,16 @@ class DAGScheduler(Cron):
             schedule_logger(job_id).info("initiator party id error:{}".format(job.f_initiator_party_id))
             raise Exception("initiator party id error {}".format(job.f_initiator_party_id))
 
+
         # create common parameters on initiator
+        # 根据backend来做兼容性的调整
         JobController.backend_compatibility(job_parameters=common_job_parameters)
+        # 修正job参数
         JobController.adapt_job_parameters(role=job.f_initiator_role, job_parameters=common_job_parameters, create_initiator_baseline=True)
 
+        # 更新公共参数
         job.f_runtime_conf = conf_adapter.update_common_parameters(common_parameters=common_job_parameters)
+        # 得到对应job_id的dsl解析器
         dsl_parser = schedule_utils.get_job_dsl_parser(dsl=job.f_dsl,
                                                        runtime_conf=job.f_runtime_conf,
                                                        train_runtime_conf=job.f_train_runtime_conf)
@@ -110,8 +150,10 @@ class DAGScheduler(Cron):
                 for party_id in party_ids:
                     if role == job.f_initiator_role and party_id == job.f_initiator_party_id:
                         continue
+                    # 初始化task
                     JobController.initialize_tasks(job_id, role, party_id, False, job.f_initiator_role, job.f_initiator_party_id, common_job_parameters, dsl_parser)
 
+        # 创建job任务
         status_code, response = FederatedScheduler.create_job(job=job)
         if status_code != FederatedSchedulingStatusCode.SUCCESS:
             job.f_status = JobStatus.FAILED
@@ -130,6 +172,11 @@ class DAGScheduler(Cron):
         }
         submit_result.update(path_dict)
         return submit_result
+
+
+
+
+
 
     def run_do(self):
         schedule_logger().info("start schedule waiting jobs")

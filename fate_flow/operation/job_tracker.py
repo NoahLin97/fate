@@ -183,7 +183,9 @@ class Tracker(object):
                                                       model_alias=model_alias,
                                                       model_buffers=model_buffers)
 
+    # 获取输出模型
     def get_output_model(self, model_alias):
+        # 从文件中读取组件模型
         model_buffers = self.pipelined_model.read_component_model(component_name=self.component_name,
                                                                   model_alias=model_alias)
         return model_buffers

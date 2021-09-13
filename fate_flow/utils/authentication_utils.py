@@ -393,20 +393,63 @@ def check_constraint(job_runtime_conf, job_dsl):
 # 被fate_flow.utils.authentication_utils.py里面的check_constraint函数所调用
 def check_component_constraint(job_runtime_conf, job_dsl):
     if job_dsl:
-        # 获取所有的组件
+        # 获取所有的组件的模块名称
         all_components = get_all_components(job_dsl)
+
+        # 纵向逻辑回归、纵向线性回归、纵向泊松回归
         glm = ['heterolr', 'heterolinr', 'heteropoisson']
         for cpn in glm:
             if cpn in all_components:
+                # 获取role信息
                 roles = job_runtime_conf.get('role')
                 if 'guest' in roles.keys() and 'arbiter' in roles.keys() and 'host' in roles.keys():
+                    # 获取guest和arbiter共有的partyid
+                    # set() 函数创建一个无序不重复元素集，可进行关系测试，删除重复数据，还可以计算交集、差集、并集等。
+                    # x & y  交集
                     for party_id in set(roles['guest']) & set(roles['arbiter']):
+                        # 符合规范的： arbiter和guest方有共同的partyid也要在host方 或者 arbiter和guest方交集的数量等于host方的数量
                         if party_id not in roles['host'] or len(set(roles['guest']) & set(roles['arbiter'])) != len(roles['host']):
                             raise Exception("{} component constraint party id, please check role config:{}".format(cpn, job_runtime_conf.get('role')))
 
+'''
+    "job_runtime_conf":{
+        "initiator": {
+            "role": "guest",
+            "party_id": 9999
+        },
+        "job_parameters": {
+            "work_mode": 1
+        },
+        "role": {
+            "guest": [9999],
+            "host": [10000],
+            "arbiter": [10000]
+        },
+'''
 
-# 获取所有的组件
+
+
+# 获取所有的组件的模块名称
 # 被调：
 # 被fate_flow.utils.authentication_utils.py里面的authentication_check、check_component_constraint函数所调用
 def get_all_components(dsl):
     return [dsl['components'][component_name]['module'].lower() for component_name in dsl['components'].keys()]
+    # eg：DataIO、HomoOneHotEncoder、FeatureScale、HomoNN
+
+'''
+    "components": {
+        "dataio_0": {
+            "module": "DataIO",
+        },
+        "homo_onehot_0": {
+            "module": "HomoOneHotEncoder",
+        },
+        "feature_scale_0": {
+            "module": "FeatureScale",
+        },
+        "homo_nn_0": {
+            "module": "HomoNN",
+        }
+    }
+'''
+

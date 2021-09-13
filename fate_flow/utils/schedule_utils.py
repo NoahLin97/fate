@@ -43,8 +43,11 @@ def get_job_dsl_parser(dsl=None, runtime_conf=None, pipeline_dsl=None, train_run
     # 通过版本号得到dsl的解析器实例，得到的是DSLParser()或DSLParserV2()
     dsl_parser = get_dsl_parser_by_version(parser_version)
 
+    # /data/projects/fate/python/federatedml/conf/default_runtime_conf
     default_runtime_conf_path = os.path.join(file_utils.get_python_base_directory(),
                                              *['federatedml', 'conf', 'default_runtime_conf'])
+
+    # /data/projects/fate/python/federatedml/conf/setting_conf
     setting_conf_path = os.path.join(file_utils.get_python_base_directory(), *['federatedml', 'conf', 'setting_conf'])
 
     # 从fate_flow.utils.config_adapter中调用JobRuntimeConfigAdapter模块的get_job_type函数

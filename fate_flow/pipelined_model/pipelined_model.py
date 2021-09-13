@@ -81,6 +81,7 @@ class PipelinedModel(object):
     def save_component_model(self, component_name, component_module_name, model_alias, model_buffers):
         model_proto_index = {}
         component_model_storage_path = os.path.join(self.variables_data_path, component_name, model_alias)
+        # os.makedirs() 方法用于递归创建目录。
         os.makedirs(component_model_storage_path, exist_ok=True)
         for model_name, buffer_object in model_buffers.items():
             storage_path = os.path.join(component_model_storage_path, model_name)
@@ -111,13 +112,17 @@ class PipelinedModel(object):
     # 被fate_flow.utils.model_utils.py里面的check_before_deploy函数调用
     # 被fate_flow.utils.model_utils.py里面的check_if_deployed函数调用
     def read_component_model(self, component_name, model_alias):
+        # eg：guest#9999#arbiter-10000#guest-9999#host-10000#model_202108291647004995364\variables\data\dataio_0\dataio
         component_model_storage_path = os.path.join(self.variables_data_path, component_name, model_alias)
+        # 获取模型原型索引
         model_proto_index = self.get_model_proto_index(component_name=component_name,
                                                        model_alias=model_alias)
         model_buffers = {}
         for model_name, buffer_name in model_proto_index.items():
             with open(os.path.join(component_model_storage_path, model_name), "rb") as fr:
+                # eg：DataIOMeta
                 buffer_object_serialized_string = fr.read()
+                # 解析原型，返回buffer_object类
                 model_buffers[model_name] = self.parse_proto_object(buffer_name=buffer_name,
                                                                     buffer_object_serialized_string=buffer_object_serialized_string)
         return model_buffers
@@ -186,6 +191,7 @@ class PipelinedModel(object):
     def packaging_model(self):
         if not self.exists():
             raise Exception("Can not found {} {} model local cache".format(self.model_id, self.model_version))
+        # shutil.make_archive 压缩文件
         archive_file_path = shutil.make_archive(base_name=self.archive_model_base_path(), format=self.default_archive_format, root_dir=self.model_path)
         stat_logger.info("Make model {} {} archive on {} successfully".format(self.model_id,
                                                                               self.model_version,
@@ -201,6 +207,18 @@ class PipelinedModel(object):
     def unpack_model(self, archive_file_path: str):
         if os.path.exists(self.model_path):
             raise Exception("Model {} {} local cache already existed".format(self.model_id, self.model_version))
+        '''
+        make_archive()
+        功能：归档函数，归档操作
+        格式：shutil.make_archive(‘目标文件路径’,‘归档文件后缀’,‘需要归档的目录’)
+        返回值：归档文件的最终路径
+        
+        unpack_archive()
+        功能：解包操作
+        格式：shutil.unpack_archive(‘归档文件路径’,‘解包目标文件夹’)
+        返回值:None
+        注意：文件夹不存在会新建文件夹
+        '''
         shutil.unpack_archive(archive_file_path, self.model_path)
         stat_logger.info("Unpack model archive to {}".format(self.model_path))
 
@@ -232,12 +250,36 @@ class PipelinedModel(object):
 
 
     # 获取模型原型索引
+    # 在guest#9999#arbiter-10000#guest-9999#host-10000#model_202108291647004995364\define目录下
     # 被调：
     # 被fate_flow.pipelined_model.pipelined_model.py里面的read_component_model函数调用
     def get_model_proto_index(self, component_name, model_alias):
         with open(self.define_meta_path, "r", encoding="utf-8") as fr:
+            # 载入define_meta.yaml文件
             define_index = yaml.safe_load(fr)
             return define_index.get("model_proto", {}).get(component_name, {}).get(model_alias, {})
+
+    '''
+    define_meta.yaml文件部分内容：
+    
+    model_proto:
+      dataio_0:
+        dataio:
+          DataIOMeta: DataIOMeta
+          DataIOParam: DataIOParam
+      homo_nn_0:
+        homo_nn:
+          HomoNNModelMeta: NNModelMeta
+          HomoNNModelParam: NNModelParam
+      homo_nn_1:
+        homo_nn2:
+          HomoNNModelMeta: NNModelMeta
+          HomoNNModelParam: NNModelParam
+      pipeline:
+        pipeline:
+          Pipeline: Pipeline
+    '''
+
 
     # 获取组件定义
     # 被调:
@@ -256,6 +298,7 @@ class PipelinedModel(object):
     # 被fate_flow.pipelined_model.pipelined_model.py里面的collect_models函数调用
     def parse_proto_object(self, buffer_name, buffer_object_serialized_string):
         try:
+            # 获取原型缓冲区里的类
             buffer_object = self.get_proto_buffer_class(buffer_name)()
         except Exception as e:
             stat_logger.exception("Can not restore proto buffer object", e)
@@ -281,12 +324,15 @@ class PipelinedModel(object):
     # 被fate_flow.pipelined_model.pipelined_model.py里面的parse_proto_object函数调用
     @classmethod
     def get_proto_buffer_class(cls, buffer_name):
+        # eg：/data/projects/fate/python/federatedml/protobuf/generated
         package_path = os.path.join(file_utils.get_python_base_directory(), 'federatedml', 'protobuf', 'generated')
         package_python_path = 'federatedml.protobuf.generated'
+        # os.listdir() 方法用于返回指定的文件夹包含的文件或文件夹的名字的列表。
         for f in os.listdir(package_path):
             if f.startswith('.'):
                 continue
             try:
+                # Python rstrip() 删除 string 字符串末尾的指定字符（默认为空格）.
                 proto_module = importlib.import_module(package_python_path + '.' + f.rstrip('.py'))
                 for name, obj in inspect.getmembers(proto_module):
                     if inspect.isclass(obj) and name == buffer_name:

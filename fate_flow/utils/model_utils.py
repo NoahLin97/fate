@@ -37,6 +37,7 @@ def gen_party_model_id(model_id, role, party_id):
 
 
 # 生成模型id
+# eg：arbiter-10000#guest-9999#host-10000#model
 def gen_model_id(all_party):
     # all_party_key连接所有party作为party的key
     return gen_key_string_separator.join([all_party_key(all_party), "model"])
@@ -277,8 +278,10 @@ def check_if_deployed(role, party_id, model_id, model_version):
     party_model_id = gen_party_model_id(model_id=model_id, role=role, party_id=party_id)
     # 初始化PipelinedModel类
     pipeline_model = PipelinedModel(model_id=party_model_id, model_version=model_version)
+    # 若模型不存在
     if not pipeline_model.exists():
         raise Exception(f"Model {party_model_id} {model_version} not exists in model local cache.")
+    # 若模型存在
     else:
         # 从文件中读取模型的组件
         pipeline = pipeline_model.read_component_model('pipeline', 'pipeline')['Pipeline']

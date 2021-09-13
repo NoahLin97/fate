@@ -27,12 +27,18 @@ import typing
 # 被fate_flow.scheduler.dag_scheduler.py里面的submit函数所调用
 # 被fate_flow.utils.job_utils.py里面的check_job_runtime_conf函数所调用
 def check_config(config: typing.Dict, required_arguments: typing.List):
+    # check分两种情况，一种检查对应的参数是否存在，一种检查对应参数的值是否正确，
+    # 第一种若不存在放进no_arguments，第二种若值错误放进error_arguments
     # 检查config里面是否都存在required_arguments
     no_arguments = []
     error_arguments = []
     for require_argument in required_arguments:
+        # 判断类型是否为元组
         if isinstance(require_argument, tuple):
+            # 获取需要判断的config的值，eg：work_mode的值1或0
+            # require_argument[0]得到这个参数的名称
             config_value = config.get(require_argument[0], None)
+            # 判断类型是否为tuple或list 是其中一个返回true
             if isinstance(require_argument[1], (tuple, list)):
                 if config_value not in require_argument[1]:
                     error_arguments.append(require_argument)

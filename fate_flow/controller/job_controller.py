@@ -85,6 +85,7 @@ class JobController(object):
                                    job_parameters=job_parameters, roles=roles, is_initiator=is_initiator, dsl_parser=dsl_parser)
         JobSaver.create_job(job_info=job_info)
 
+    # 根据backend来做兼容性的调整
     @classmethod
     def backend_compatibility(cls, job_parameters: RunParameters):
         # compatible with previous 1.5 versions
@@ -122,8 +123,10 @@ class JobController(object):
             elif job_parameters.computing_engine in [ComputingEngine.STANDALONE]:
                 job_parameters.federated_mode = FederatedMode.SINGLE
 
+    # 修正job参数
     @classmethod
     def adapt_job_parameters(cls, role, job_parameters: RunParameters, create_initiator_baseline=False):
+        # 修正引擎参数
         ResourceManager.adapt_engine_parameters(
             role=role, job_parameters=job_parameters, create_initiator_baseline=create_initiator_baseline)
         if create_initiator_baseline:
@@ -164,6 +167,7 @@ class JobController(object):
             raise RuntimeError(
                 f"max cores per job is {max_cores_per_job} base on (fate_flow/settings#MAX_CORES_PERCENT_PER_JOB * conf/service_conf.yaml#nodes * conf/service_conf.yaml#cores_per_node), expect {cores_submit} cores, {msg}, {msg2}")
 
+    # 初始化task任务
     @classmethod
     def initialize_tasks(cls, job_id, role, party_id, run_on_this_party, initiator_role, initiator_party_id, job_parameters: RunParameters, dsl_parser, component_name=None, task_version=None):
         common_task_info = {}
@@ -177,6 +181,7 @@ class JobController(object):
         if task_version:
             common_task_info["task_version"] = task_version
         if not component_name:
+            # 获取拓扑组件
             components = dsl_parser.get_topology_components()
         else:
             components = [dsl_parser.get_component_info(

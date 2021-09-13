@@ -45,11 +45,14 @@ def internal_server_error(e):
 
 @manager.route('/submit', methods=['POST'])
 def submit_job():
-    #将job_runtime_conf作为参数，调用fate_flow/utils/config_adapter模块的JobRuntimeConfigAdapter方法获取一个Adapter对象，从Adapter对象中获取work_mode
+    # 将job_runtime_conf作为参数，调用fate_flow/utils/config_adapter模块的JobRuntimeConfigAdapter方法获取一个Adapter对象，
+    # 从Adapter对象中调用get_job_work_mode获取work_mode
     work_mode = JobRuntimeConfigAdapter(request.json.get('job_runtime_conf', {})).get_job_work_mode()
-    #调用fate_flow/utils/detect_utils的check_config方法检查work_mode是否合法
+    # 调用fate_flow/utils/detect_utils的check_config方法检查work_mode是否合法
+    # 调用fate_arch.common._types.py中的 WorkMode.CLUSTER = 1, WorkMode.STANDALONE = 0
     detect_utils.check_config({'work_mode': work_mode}, required_arguments=[('work_mode', (WorkMode.CLUSTER, WorkMode.STANDALONE))])
-    submit_result = DAGScheduler.submit(request.json)#调用fate_flow/scheduler/dat_scheduler模块的submit方法提交job
+    # 调用fate_flow/scheduler/dat_scheduler模块的submit方法提交job
+    submit_result = DAGScheduler.submit(request.json)
     return get_json_result(retcode=0, retmsg='success',
                            job_id=submit_result.get("job_id"),
                            data=submit_result)
